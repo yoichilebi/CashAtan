@@ -48,6 +48,33 @@ def init_db():
     connection.commit()
     connection.close()
 
+# for registering new users during sign up
+def register_user(full_name, email, username, password):
+    """Inserts a new user. Returns True if successful, False if duplicate."""
+    try:
+        connection = sqlite3.connect("cashatan.db")
+        cursor = connection.cursor()
+        cursor.execute('''
+            INSERT INTO users (full_name, email, username, password)
+            VALUES (?, ?, ?, ?)
+        ''', (full_name, email, username, password))
+        connection.commit()
+        connection.close()
+        return True
+    except sqlite3.IntegrityError:
+        return False
+
+# for authenticating users during login
+def authenticate_user(username, password):
+    """Checks credentials. Returns the user tuple if found, else None."""
+    connection = sqlite3.connect("cashatan.db")
+    cursor = connection.cursor()
+    cursor.execute('SELECT * FROM users WHERE username = ? AND password = ?', (username, password))
+    user = cursor.fetchone()
+    connection.close()
+    return user
+
+
 # ==========================================
 # 2. MAIN APPLICATION CONTROLLER
 # ==========================================
@@ -98,18 +125,34 @@ class LoginPage(tk.Frame):
         form_frame = tk.Frame(self)
         form_frame.pack(pady=10)
         
+        #Username
         tk.Label(form_frame, text="Username:").grid(row=0, column=0, sticky="e", pady=5)
-        tk.Entry(form_frame).grid(row=0, column=1, padx=10, pady=5)
+        self.username_entry = tk.Entry(form_frame) # <--- Variable name is now 'self.username_entry'
+        self.username_entry.grid(row=0, column=1, padx=10, pady=5)
         
+        #Password
         tk.Label(form_frame, text="Password:").grid(row=1, column=0, sticky="e", pady=5)
-        tk.Entry(form_frame, show="*").grid(row=1, column=1, padx=10, pady=5)
+        self.password_entry = tk.Entry(form_frame, show="*") # <--- Variable name is now 'self.password_entry'
+        self.password_entry.grid(row=1, column=1, padx=10, pady=5)
         
+        # Buttons
         btn_frame = tk.Frame(self)
         btn_frame.pack(pady=(0, 20))
         tk.Button(btn_frame, text="Login", width=15, 
-                  command=lambda: controller.show_frame("DashboardPage")).pack(side="left", padx=6)
+                  command=lambda: self.login_action()).pack(side="left", padx=6)
         tk.Button(btn_frame, text="Sign Up", width=15, 
                   command=lambda: controller.show_frame("SignUpPage")).pack(side="left", padx=6)
+
+    #database interaction for login
+    def login_action(self):
+        user = authenticate_user(self.username_entry.get(), self.password_entry.get())
+        if user:
+            self.controller.current_user = user # Store session (id, name, email, etc.)
+            messagebox.showinfo("Login Success", f"Welcome back, {user[1]}!")
+            self.controller.show_frame("DashboardPage")
+        else:
+            messagebox.showerror("Error", "Invalid username or password.")
+    
 
 # --- 2. SIGN UP PAGE [cite: 61] ---
 class SignUpPage(tk.Frame):
@@ -117,14 +160,37 @@ class SignUpPage(tk.Frame):
         super().__init__(parent)
         tk.Label(self, text="SIGN UP", font=("Arial", 18, "bold")).pack(pady=20) # [cite: 54]
         
+
         # Fields: Full Name, Email, Username, Password [cite: 55-58]
-        fields = ["Full Name:", "Email:", "Username:", "Password:"]
-        for field in fields:
-            tk.Label(self, text=field).pack()
-            tk.Entry(self).pack(pady=2)
-            
-        tk.Button(self, text="Register", command=lambda: controller.show_frame("LoginPage")).pack(pady=10) # [cite: 59]
+        self.entries = {}
+        fields = [("Full Name:", "full_name"), ("Email:", "email"), 
+                  ("Username:", "username"), ("Password:", "password")]
+        
+        for label_text, key_name in fields:
+            tk.Label(self, text=label_text).pack()
+            entry_widget = tk.Entry(self)
+            entry_widget.pack(pady=2)
+            self.entries[key_name] = entry_widget
+
+        tk.Button(self, text="Register", command=lambda: self.signup_action()).pack(pady=10) # [cite: 59]
         tk.Button(self, text="Back to Login", command=lambda: controller.show_frame("LoginPage")).pack() # [cite: 60]
+
+    #database interaction for sign up
+    def signup_action(self):
+        name = self.entries['full_name'].get()
+        email = self.entries['email'].get()
+        user = self.entries['username'].get()
+        pw = self.entries['password'].get()
+
+        if not all([name, email, user, pw]):
+            messagebox.showwarning("Incomplete", "Please fill in all fields.")
+            return
+
+        if register_user(name, email, user, pw):
+            messagebox.showinfo("Success", "Registration complete! You can now log in.")
+            self.controller.show_frame("LoginPage")
+        else:
+            messagebox.showerror("Error", "Username or Email already exists.")
 
 # --- 3. DASHBOARD (CENTRAL HUB) [cite: 77, 78] ---
 class DashboardPage(tk.Frame):
@@ -141,6 +207,7 @@ class DashboardPage(tk.Frame):
         tk.Button(nav_frame, text="VIEW TRANSACTIONS", width=20, command=lambda: controller.show_frame("ViewTransactionsPage")).pack(pady=5)
         tk.Button(nav_frame, text="BUDGET OVERVIEW", width=20, command=lambda: controller.show_frame("BudgetOverviewPage")).pack(pady=5)
         tk.Button(nav_frame, text="LOGOUT", width=20, command=lambda: controller.show_frame("LoginPage")).pack(pady=20)
+
 
 # --- 4. FORM TEMPLATE (ADD EXPENSE/INCOME) [cite: 89, 101] ---
 class AddExpensePage(tk.Frame):
@@ -170,6 +237,7 @@ class AddIncomePage(tk.Frame):
         tk.Button(self, text="SAVE BUDGET", command=None).pack(pady=10) # [cite: 98]
         tk.Button(self, text="BACK TO DASHBOARD", command=lambda: controller.show_frame("DashboardPage")).pack() # [cite: 99]
 
+
 # --- 5. DATA TABLE TEMPLATE (VIEW TRANSACTIONS) [cite: 114] ---
 class ViewTransactionsPage(tk.Frame):
     def __init__(self, parent, controller):
@@ -188,6 +256,7 @@ class ViewTransactionsPage(tk.Frame):
         tk.Button(btn_frame, text="Edit Expense", command=None).pack(side="left", padx=5) # [cite: 111]
         tk.Button(btn_frame, text="Back to Dashboard", command=lambda: controller.show_frame("DashboardPage")).pack(side="left", padx=5) # [cite: 112]
 
+
 # --- 6. SUMMARY TEMPLATE (BUDGET OVERVIEW) [cite: 143] ---
 class BudgetOverviewPage(tk.Frame):
     def __init__(self, parent, controller):
@@ -200,6 +269,7 @@ class BudgetOverviewPage(tk.Frame):
             tk.Label(self, text=m, font=("Arial", 12)).pack(anchor="w", padx=50)
             
         tk.Button(self, text="Back to Dashboard", command=lambda: controller.show_frame("DashboardPage")).pack(pady=20) # [cite: 142]
+
 
 # ==========================================
 # 4. START THE APP
