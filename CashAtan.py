@@ -87,26 +87,29 @@ class CashAtanApp(tk.Tk):
 # 3. PAGE CLASS TEMPLATES
 # ==========================================
 
+# --- 1. LANDING PAGE (LOGIN/SIGN UP) [cite: 50] ---
 class LoginPage(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent)
         self.controller = controller
-        tk.Label(self, text="LOGIN / SIGN UP", font=("Arial", 18, "bold")).pack(pady=20) # [cite: 44]
         
-        tk.Label(self, text="Username:").pack() # [cite: 45]
-        self.user_entry = tk.Entry(self)
-        self.user_entry.pack(pady=5)
+        tk.Label(self, text="LOGIN / SIGN UP", font=("Arial", 18, "bold")).pack(pady=20)
         
-        tk.Label(self, text="Password:").pack() # [cite: 46]
-        self.pass_entry = tk.Entry(self, show="*")
-        self.pass_entry.pack(pady=5)
+        form_frame = tk.Frame(self)
+        form_frame.pack(pady=10)
+        
+        tk.Label(form_frame, text="Username:").grid(row=0, column=0, sticky="e", pady=5)
+        tk.Entry(form_frame).grid(row=0, column=1, padx=10, pady=5)
+        
+        tk.Label(form_frame, text="Password:").grid(row=1, column=0, sticky="e", pady=5)
+        tk.Entry(form_frame, show="*").grid(row=1, column=1, padx=10, pady=5)
         
         btn_frame = tk.Frame(self)
-        btn_frame.pack(pady=20)
-        tk.Button(btn_frame, text="Login", width=10, 
-                  command=lambda: controller.show_frame("DashboardPage")).pack(side="left", padx=10)
-        tk.Button(btn_frame, text="Sign Up", width=10, 
-                  command=lambda: controller.show_frame("SignUpPage")).pack(side="left", padx=10)
+        btn_frame.pack(pady=(0, 20))
+        tk.Button(btn_frame, text="Login", width=15, 
+                  command=lambda: controller.show_frame("DashboardPage")).pack(side="left", padx=6)
+        tk.Button(btn_frame, text="Sign Up", width=15, 
+                  command=lambda: controller.show_frame("SignUpPage")).pack(side="left", padx=6)
 
 class SignUpPage(tk.Frame):
     def __init__(self, parent, controller):
