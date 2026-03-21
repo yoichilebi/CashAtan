@@ -162,18 +162,33 @@ class SignUpPage(tk.Frame):
         
 
         # Fields: Full Name, Email, Username, Password [cite: 55-58]
+        form_frame = tk.Frame(self)
+        form_frame.pack(pady=10)
+
         self.entries = {}
         fields = [("Full Name:", "full_name"), ("Email:", "email"), 
                   ("Username:", "username"), ("Password:", "password")]
         
-        for label_text, key_name in fields:
-            tk.Label(self, text=label_text).pack()
-            entry_widget = tk.Entry(self)
-            entry_widget.pack(pady=2)
+        # 2. Loop through and use .grid() instead of .pack()
+        for i, (label_text, key_name) in enumerate(fields):
+            # Label in Column 0
+            tk.Label(form_frame, text=label_text).grid(row=i, column=0, sticky="e", pady=5, padx=5)
+            
+            # Entry in Column 1
+            show_char = "*" if "Password" in label_text else None
+            entry_widget = tk.Entry(form_frame, width=25, show=show_char)
+            entry_widget.grid(row=i, column=1, pady=5, padx=5)
+            
+            # 3. SAVE the widget so signup_action can find it
             self.entries[key_name] = entry_widget
 
-        tk.Button(self, text="Register", command=lambda: self.signup_action()).pack(pady=10) # [cite: 59]
-        tk.Button(self, text="Back to Login", command=lambda: controller.show_frame("LoginPage")).pack() # [cite: 60]
+        #Buttons
+        btn_frame = tk.Frame(self)
+        btn_frame.pack(pady=(0, 20))
+        tk.Button(btn_frame, text="Register", width=15, 
+                  command=lambda: self.signup_action()).pack(side="left", padx=6)
+        tk.Button(btn_frame, text="Back to Login", width=15, 
+                  command=lambda: controller.show_frame("LoginPage")).pack(side="left", padx=6)
 
     #database interaction for sign up
     def signup_action(self):
