@@ -125,6 +125,9 @@ class LoginPage(tk.Frame):
         form_frame = tk.Frame(self)
         form_frame.pack(pady=10)
         
+        # Variable to track if password should be shown
+        self.var_show_pass = tk.BooleanVar(value=False)
+
         #Username
         tk.Label(form_frame, text="Username:").grid(row=0, column=0, sticky="e", pady=5)
         self.username_entry = tk.Entry(form_frame) # <--- Variable name is now 'self.username_entry'
@@ -135,6 +138,10 @@ class LoginPage(tk.Frame):
         self.password_entry = tk.Entry(form_frame, show="*") # <--- Variable name is now 'self.password_entry'
         self.password_entry.grid(row=1, column=1, padx=10, pady=5)
         
+        #Show Password Checkbox
+        tk.Checkbutton(form_frame, text="Show Password", variable=self.var_show_pass, 
+                       command=self.toggle_password).grid(row=2, column=1, sticky="w")
+        
         # Buttons
         btn_frame = tk.Frame(self)
         btn_frame.pack(pady=(0, 20))
@@ -142,6 +149,14 @@ class LoginPage(tk.Frame):
                   command=lambda: self.login_action()).pack(side="left", padx=6)
         tk.Button(btn_frame, text="Sign Up", width=15, 
                   command=lambda: controller.show_frame("SignUpPage")).pack(side="left", padx=6)
+
+    #for toggling password visibility
+    def toggle_password(self):
+        """Toggles the 'show' property of the password entry"""
+        if self.var_show_pass.get():
+            self.password_entry.config(show="") # Show text
+        else:
+            self.password_entry.config(show="*") # Mask text
 
     #database interaction for login
     def login_action(self):
@@ -170,25 +185,40 @@ class SignUpPage(tk.Frame):
                   ("Username:", "username"), ("Password:", "password")]
         
         # 2. Loop through and use .grid() instead of .pack()
+        # Inside SignUpPage __init__
+        self.var_show_pass = tk.BooleanVar(value=False) # Tracks the checkbox state
+
         for i, (label_text, key_name) in enumerate(fields):
-            # Label in Column 0
-            tk.Label(form_frame, text=label_text).grid(row=i, column=0, sticky="e", pady=5, padx=5)
+            tk.Label(form_frame, text=label_text).grid(row=i, column=0, sticky="e", pady=5)
             
-            # Entry in Column 1
             show_char = "*" if "Password" in label_text else None
             entry_widget = tk.Entry(form_frame, width=25, show=show_char)
             entry_widget.grid(row=i, column=1, pady=5, padx=5)
-            
-            # 3. SAVE the widget so signup_action can find it
+            self.entries[key_name] = entry_widget 
+
+        # 3. SAVE the widget so signup_action can find it
             self.entries[key_name] = entry_widget
 
-        #Buttons
+        # Add the "Show Password" checkbox right after the loop
+        tk.Checkbutton(form_frame, text="Show Password", variable=self.var_show_pass, 
+                       command=self.toggle_password).grid(row=len(fields), column=1, sticky="w")
+            
         btn_frame = tk.Frame(self)
         btn_frame.pack(pady=(0, 20))
         tk.Button(btn_frame, text="Register", width=15, 
                   command=lambda: self.signup_action()).pack(side="left", padx=6)
         tk.Button(btn_frame, text="Back to Login", width=15, 
                   command=lambda: controller.show_frame("LoginPage")).pack(side="left", padx=6)
+
+    #showing password
+    def toggle_password(self):
+        # Grab the password entry widget from our dictionary
+        pw_entry = self.entries['password']
+        
+        if self.var_show_pass.get():
+            pw_entry.config(show="") # Empty string means "show text"
+        else:
+            pw_entry.config(show="*") # Hide text
 
     #database interaction for sign up
     def signup_action(self):
