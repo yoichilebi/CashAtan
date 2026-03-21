@@ -45,8 +45,8 @@ def init_db():
         )
     ''')
 
-    conn.commit()
-    conn.close()
+    connection.commit()
+    connection.close()
 
 # ==========================================
 # 2. MAIN APPLICATION CONTROLLER
