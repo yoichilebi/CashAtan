@@ -7,7 +7,7 @@ import sqlite3
 # ==========================================
 def init_db():
     connection = sqlite3.connect("cashatan.db")
-    cursor = conn.cursor()
+    cursor = connection.cursor()
 
     # Users Table: Secure entry point data [cite: 55-58]
     cursor.execute('''
