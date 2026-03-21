@@ -111,6 +111,7 @@ class LoginPage(tk.Frame):
         tk.Button(btn_frame, text="Sign Up", width=15, 
                   command=lambda: controller.show_frame("SignUpPage")).pack(side="left", padx=6)
 
+# --- 2. SIGN UP PAGE [cite: 61] ---
 class SignUpPage(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent)
@@ -125,6 +126,7 @@ class SignUpPage(tk.Frame):
         tk.Button(self, text="Register", command=lambda: controller.show_frame("LoginPage")).pack(pady=10) # [cite: 59]
         tk.Button(self, text="Back to Login", command=lambda: controller.show_frame("LoginPage")).pack() # [cite: 60]
 
+# --- 3. DASHBOARD (CENTRAL HUB) [cite: 77, 78] ---
 class DashboardPage(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent)
@@ -140,6 +142,7 @@ class DashboardPage(tk.Frame):
         tk.Button(nav_frame, text="BUDGET OVERVIEW", width=20, command=lambda: controller.show_frame("BudgetOverviewPage")).pack(pady=5)
         tk.Button(nav_frame, text="LOGOUT", width=20, command=lambda: controller.show_frame("LoginPage")).pack(pady=20)
 
+# --- 4. FORM TEMPLATE (ADD EXPENSE/INCOME) [cite: 89, 101] ---
 class AddExpensePage(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent)
@@ -152,6 +155,7 @@ class AddExpensePage(tk.Frame):
             
         tk.Button(self, text="SAVE EXPENSE", command=None).pack(pady=10) # [cite: 86]
         tk.Button(self, text="BACK TO DASHBOARD", command=lambda: controller.show_frame("DashboardPage")).pack() # [cite: 87]
+
 
 class AddIncomePage(tk.Frame):
     def __init__(self, parent, controller):
@@ -166,6 +170,7 @@ class AddIncomePage(tk.Frame):
         tk.Button(self, text="SAVE BUDGET", command=None).pack(pady=10) # [cite: 98]
         tk.Button(self, text="BACK TO DASHBOARD", command=lambda: controller.show_frame("DashboardPage")).pack() # [cite: 99]
 
+# --- 5. DATA TABLE TEMPLATE (VIEW TRANSACTIONS) [cite: 114] ---
 class ViewTransactionsPage(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent)
@@ -183,6 +188,7 @@ class ViewTransactionsPage(tk.Frame):
         tk.Button(btn_frame, text="Edit Expense", command=None).pack(side="left", padx=5) # [cite: 111]
         tk.Button(btn_frame, text="Back to Dashboard", command=lambda: controller.show_frame("DashboardPage")).pack(side="left", padx=5) # [cite: 112]
 
+# --- 6. SUMMARY TEMPLATE (BUDGET OVERVIEW) [cite: 143] ---
 class BudgetOverviewPage(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent)
