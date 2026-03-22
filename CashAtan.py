@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 import sqlite3
+from tkcalendar import DateEntry
 
 # ==========================================
 # 1. DATABASE INITIALIZATION
@@ -20,19 +21,6 @@ def init_db():
         )
     ''')
 
-    # Transactions Table: Organized records of income and expenses [cite: 82-85, 94-97]
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS transactions (
-            transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER NOT NULL,
-            type TEXT NOT NULL, -- 'Income' or 'Expense'
-            amount REAL NOT NULL,
-            category TEXT,
-            date TEXT NOT NULL,
-            notes TEXT,
-            FOREIGN KEY (user_id) REFERENCES users (user_id)
-        )
-    ''')
 
     # Budget Goals Table: Supports budget overview and savings goals [cite: 124, 129]
     cursor.execute('''
@@ -47,6 +35,7 @@ def init_db():
 
     connection.commit()
     connection.close()
+
 
 # for registering new users during sign up
 def register_user(full_name, email, username, password):
@@ -64,6 +53,7 @@ def register_user(full_name, email, username, password):
     except sqlite3.IntegrityError:
         return False
 
+
 # for authenticating users during login
 def authenticate_user(username, password):
     """Checks credentials. Returns the user tuple if found, else None."""
@@ -74,6 +64,37 @@ def authenticate_user(username, password):
     connection.close()
     return user
 
+
+#for adding transactions (expenses) to the database
+def init_db():
+    # Open the connection once
+    connection = sqlite3.connect("cashatan.db")
+    cursor = connection.cursor()
+    
+    # Enable foreign keys for this session
+    cursor.execute("PRAGMA foreign_keys = ON;")
+
+    # Table A: Users (Make sure this is here if you haven't created it yet)
+    cursor.execute('''CREATE TABLE IF NOT EXISTS users (
+        user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL
+    )''')
+
+    # Table B: Expenses (Your updated code)
+    cursor.execute('''CREATE TABLE IF NOT EXISTS expenses (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        date TEXT,
+        category TEXT,
+        amount REAL,
+        notes TEXT,
+        FOREIGN KEY (user_id) REFERENCES users (user_id)
+    )''')
+    
+    # Commit and close ONLY after both tables are handled
+    connection.commit()
+    connection.close()
 
 # ==========================================
 # 2. MAIN APPLICATION CONTROLLER
@@ -162,8 +183,10 @@ class LoginPage(tk.Frame):
     def login_action(self):
         user = authenticate_user(self.username_entry.get(), self.password_entry.get())
         if user:
-            self.controller.current_user = user # Store session (id, name, email, etc.)
-            messagebox.showinfo("Login Success", f"Welcome back, {user[1]}!")
+            # user[0] is the user_id from your database
+            self.controller.current_user_id = user[0] 
+            
+            messagebox.showinfo("Login Success", f"Welcome back, {user[3]}!") # user[3] is username
             self.controller.show_frame("DashboardPage")
         else:
             messagebox.showerror("Error", "Invalid username or password.")
@@ -258,16 +281,97 @@ class DashboardPage(tk.Frame):
 class AddExpensePage(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent)
-        tk.Label(self, text="ADD EXPENSE", font=("Arial", 18, "bold")).pack(pady=20) # [cite: 81]
-        
-        # Input fields for spending details [cite: 82-85]
-        for field in ["Date:", "Category:", "Amount:", "Notes:"]:
-            tk.Label(self, text=field).pack()
-            tk.Entry(self).pack(pady=2)
-            
-        tk.Button(self, text="SAVE EXPENSE", command=None).pack(pady=10) # [cite: 86]
-        tk.Button(self, text="BACK TO DASHBOARD", command=lambda: controller.show_frame("DashboardPage")).pack() # [cite: 87]
+        self.controller = controller
 
+        # 1. Title
+        tk.Label(self, text="ADD EXPENSE", font=("Arial", 18, "bold")).pack(pady=20)
+
+        # 2. Form Container
+        form_frame = tk.Frame(self)
+        form_frame.pack(pady=10)
+
+        # 3. Input Fields
+        fields = ["Date:", "Category:", "Amount:", "Notes:"]
+        self.entries = {} 
+
+        # Define your expense categories here
+        categories = ["Food", "Transportation", "Bills", "Groceries", "Entertainment", "Health", "Others"]
+
+        for i, field in enumerate(fields):
+            lbl = tk.Label(form_frame, text=field, font=("Arial", 10))
+            lbl.grid(row=i, column=0, padx=10, pady=5, sticky="e")
+            
+            if field == "Date:":
+                entry = DateEntry(form_frame, width=25, background='darkblue', 
+                                  foreground='white', borderwidth=2, 
+                                  date_pattern='y-mm-dd')
+            
+            elif field == "Category:":
+                # This is your "Dropdown but Radiobutton" replacement
+                entry = ttk.Combobox(form_frame, values=categories, width=25, state="readonly")
+                entry.set("Select Category") # Default text
+            
+            else:
+                entry = tk.Entry(form_frame, font=("Arial", 10), width=24)
+            
+            entry.grid(row=i, column=1, padx=10, pady=5, sticky="w")
+            self.entries[field] = entry
+
+
+        # 4. Buttons
+        button_frame = tk.Frame(self)
+        button_frame.pack(pady=(0, 20))
+
+        tk.Button(button_frame, text="SAVE EXPENSE", 
+                  width=18, command=self.save_to_db).pack(side="left", padx=5)
+        
+        tk.Button(button_frame, text="BACK TO DASHBOARD", 
+                  width=18, command=lambda: controller.show_frame("DashboardPage")).pack(side="left", padx=5)
+
+    #database for saving expense data will go here
+    def save_to_db(self):
+        # 1. Get data from UI (Matching the labels in your loop)
+        date = self.entries["Date:"].get()
+        category = self.entries["Category:"].get()
+        amount = self.entries["Amount:"].get()
+        notes = self.entries["Notes:"].get()
+    
+        # 2. Safety Check for Logged In User
+        u_id = getattr(self.controller, 'current_user_id', None) 
+        
+        if u_id is None:
+            messagebox.showerror("Error", "No user logged in! Please restart and log in.")
+            return
+
+        if not date or not category or not amount:
+            messagebox.showwarning("Input Error", "Please fill in the required fields.")
+            return
+
+        try:
+            connection = sqlite3.connect("cashatan.db")
+            cursor = connection.cursor()
+            cursor.execute("PRAGMA foreign_keys = ON;") 
+            
+            query = """INSERT INTO expenses (user_id, date, category, amount, notes) 
+                    VALUES (?, ?, ?, ?, ?)"""
+            cursor.execute(query, (u_id, date, category, float(amount), notes))
+            
+            connection.commit()
+            connection.close()
+
+            messagebox.showinfo("Success", "Expense saved to your account!")
+            self.clear_entries()
+            
+        except ValueError:
+            messagebox.showerror("Error", "Amount must be a number (e.g. 100.50).")
+        except sqlite3.IntegrityError:
+            messagebox.showerror("Database Error", "User session invalid. Please log in again.")
+
+    #for clring the entry fields after saving an expense
+    def clear_entries(self):
+        """Clears the boxes so you can add another expense immediately"""
+        for entry in self.entries.values():
+            entry.delete(0, tk.END)
 
 class AddIncomePage(tk.Frame):
     def __init__(self, parent, controller):
