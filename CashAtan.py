@@ -134,8 +134,13 @@ class CashAtanApp(tk.Tk):
         self.show_frame("LoginPage")
 
     def show_frame(self, page_name):
-        """Switches to the specified page [cite: 79]"""
+        """Switches to the specified page and refreshes data if needed."""
         frame = self.frames[page_name]
+        
+        # This is the "Engine" that loads your data!
+        if hasattr(frame, "load_data"):
+            frame.load_data()
+            
         frame.tkraise()
 
 # ==========================================
@@ -492,20 +497,126 @@ class AddIncomePage(tk.Frame):
 class ViewTransactionsPage(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent)
-        tk.Label(self, text="VIEW TRANSACTIONS", font=("Arial", 18, "bold")).pack(pady=10) # [cite: 105]
+        self.controller = controller
         
-        # Table for financial history [cite: 115]
-        cols = ("Date", "Category", "Amount", "Notes")
+        tk.Label(self, text="VIEW TRANSACTIONS", font=("Arial", 18, "bold")).pack(pady=10)
+        
+        # 1. Table Setup
+        cols = ("ID", "Type", "Date", "Category", "Amount", "Notes")
         self.tree = ttk.Treeview(self, columns=cols, show="headings")
-        for col in cols: self.tree.heading(col, text=col)
-        self.tree.pack(fill="both", expand=True, padx=10)
         
-        btn_frame = tk.Frame(self)
-        btn_frame.pack(pady=10)
-        tk.Button(btn_frame, text="Delete Expense", command=None).pack(side="left", padx=5) # [cite: 110]
-        tk.Button(btn_frame, text="Edit Expense", command=None).pack(side="left", padx=5) # [cite: 111]
-        tk.Button(btn_frame, text="Back to Dashboard", command=lambda: controller.show_frame("DashboardPage")).pack(side="left", padx=5) # [cite: 112]
+        for col in cols:
+            self.tree.heading(col, text=col)
+            self.tree.column(col, width=100, anchor="center")
 
+        self.tree["displaycolumns"] = ("Type", "Date", "Category", "Amount", "Notes")
+        self.tree.pack(fill="both", expand=True, padx=20, pady=10)
+        
+        # 2. Buttons Container (The 3 Buttons you requested)
+        btn_frame = tk.Frame(self)
+        btn_frame.pack(pady=20)
+        
+        tk.Button(btn_frame, text="DELETE", width=18,
+                  command=self.delete_transaction).pack(side="left", padx=5)
+        
+        tk.Button(btn_frame, text="EDIT", width=18,
+                  command=self.edit_transaction).pack(side="left", padx=5)
+        
+        tk.Button(btn_frame, text="BACK TO DASHBOARD", width=22, 
+                  command=lambda: controller.show_frame("DashboardPage")).pack(side="left", padx=5)
+
+    def load_data(self):
+        """Refreshes the list from the database."""
+        for item in self.tree.get_children():
+            self.tree.delete(item)
+
+        u_id = getattr(self.controller, 'current_user_id', None)
+        if u_id is None: return
+
+        try:
+            with sqlite3.connect("cashatan.db") as conn:
+                cursor = conn.cursor()
+                query = "SELECT transaction_id, type, date, category, amount, notes FROM transactions WHERE user_id = ? ORDER BY date DESC"
+                cursor.execute(query, (u_id,))
+                for row in cursor.fetchall():
+                    self.tree.insert("", "end", values=row)
+        except sqlite3.Error as e:
+            messagebox.showerror("Error", f"Could not load data: {e}")
+
+    def delete_transaction(self):
+        selected_item = self.tree.selection()
+        if not selected_item:
+            messagebox.showwarning("Selection", "Please select a row to delete.")
+            return
+
+        confirm = messagebox.askyesno("Confirm", "Are you sure you want to delete this record?")
+        if confirm:
+            t_id = self.tree.item(selected_item)['values'][0]
+            with sqlite3.connect("cashatan.db") as conn:
+                conn.execute("DELETE FROM transactions WHERE transaction_id = ?", (t_id,))
+            self.load_data()
+
+    def edit_transaction(self):
+        """Opens a popup window to edit the selected transaction."""
+        selected_item = self.tree.selection()
+        if not selected_item:
+            messagebox.showwarning("Selection", "Please select a row to edit.")
+            return
+
+        # Get existing values
+        item_data = self.tree.item(selected_item)['values']
+        t_id, t_type, t_date, t_cat, t_amt, t_notes = item_data
+
+        # Create Popup Window
+        edit_win = tk.Toplevel(self)
+        edit_win.title("Edit Transaction")
+        edit_win.geometry("400x450")
+
+        tk.Label(edit_win, text=f"EDITING {t_type.upper()}", font=("Arial", 12, "bold")).pack(pady=10)
+
+        # Fields (Date, Category, Amount, Notes)
+        # Note: We reuse the same logic from your Add pages for consistency
+        fields_frame = tk.Frame(edit_win)
+        fields_frame.pack(pady=10)
+
+        tk.Label(fields_frame, text="Date:").grid(row=0, column=0, pady=5, sticky="e")
+        ent_date = DateEntry(fields_frame, width=20, date_pattern='y-mm-dd')
+        ent_date.set_date(t_date) # Pre-fill existing date
+        ent_date.grid(row=0, column=1, pady=5)
+
+        tk.Label(fields_frame, text="Category/Source:").grid(row=1, column=0, pady=5, sticky="e")
+        ent_cat = tk.Entry(fields_frame, width=23)
+        ent_cat.insert(0, t_cat) # Pre-fill existing category
+        ent_cat.grid(row=1, column=1, pady=5)
+
+        tk.Label(fields_frame, text="Amount:").grid(row=2, column=0, pady=5, sticky="e")
+        ent_amt = tk.Entry(fields_frame, width=23)
+        ent_amt.insert(0, t_amt) # Pre-fill existing amount
+        ent_amt.grid(row=2, column=1, pady=5)
+
+        tk.Label(fields_frame, text="Notes:").grid(row=3, column=0, pady=5, sticky="e")
+        ent_notes = tk.Entry(fields_frame, width=23)
+        ent_notes.insert(0, t_notes) # Pre-fill existing notes
+        ent_notes.grid(row=3, column=1, pady=5)
+
+        def save_changes():
+            try:
+                new_date = ent_date.get()
+                new_cat = ent_cat.get()
+                new_amt = float(ent_amt.get())
+                new_notes = ent_notes.get()
+
+                with sqlite3.connect("cashatan.db") as conn:
+                    query = "UPDATE transactions SET date=?, category=?, amount=?, notes=? WHERE transaction_id=?"
+                    conn.execute(query, (new_date, new_cat, new_amt, new_notes, t_id))
+                
+                messagebox.showinfo("Success", "Transaction updated!")
+                edit_win.destroy()
+                self.load_data() # Refresh main table
+            except ValueError:
+                messagebox.showerror("Error", "Amount must be a number.")
+
+        tk.Button(edit_win, text="SAVE CHANGES", width=20, command=save_changes).pack(pady=20)
 
 # --- 6. SUMMARY TEMPLATE (BUDGET OVERVIEW) [cite: 143] ---
 class BudgetOverviewPage(tk.Frame):
