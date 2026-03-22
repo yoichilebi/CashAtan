@@ -7,34 +7,41 @@ from tkcalendar import DateEntry
 # 1. DATABASE INITIALIZATION
 # ==========================================
 def init_db():
-    connection = sqlite3.connect("cashatan.db")
-    cursor = connection.cursor()
+    with sqlite3.connect("cashatan.db") as connection:
+            cursor = connection.cursor()
+            cursor.execute("PRAGMA foreign_keys = ON;")
 
-    # Users Table: Secure entry point data [cite: 55-58]
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS users (
-            user_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            full_name TEXT NOT NULL,
-            email TEXT UNIQUE NOT NULL,
-            username TEXT UNIQUE NOT NULL,
-            password TEXT NOT NULL
-        )
-    ''')
+            # 1. Users Table
+            cursor.execute('''CREATE TABLE IF NOT EXISTS users (
+                user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                full_name TEXT NOT NULL,
+                email TEXT UNIQUE NOT NULL,
+                username TEXT UNIQUE NOT NULL,
+                password TEXT NOT NULL
+            )''')
 
+            # 2. Transactions Table (Handles both Income & Expenses)
+            cursor.execute('''CREATE TABLE IF NOT EXISTS transactions (
+                transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                type TEXT NOT NULL,     -- 'Income' or 'Expense'
+                amount REAL NOT NULL,
+                category TEXT,
+                date TEXT NOT NULL,
+                notes TEXT,
+                FOREIGN KEY (user_id) REFERENCES users (user_id)
+            )''')
 
-    # Budget Goals Table: Supports budget overview and savings goals [cite: 124, 129]
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS budgets (
-            budget_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER UNIQUE NOT NULL,
-            monthly_income REAL DEFAULT 0.0,
-            savings_goal REAL DEFAULT 0.0,
-            FOREIGN KEY (user_id) REFERENCES users (user_id)
-        )
-    ''')
-
-    connection.commit()
-    connection.close()
+            # 3. Budgets Table
+            cursor.execute('''CREATE TABLE IF NOT EXISTS budgets (
+                budget_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER UNIQUE NOT NULL,
+                monthly_income REAL DEFAULT 0.0,
+                savings_goal REAL DEFAULT 0.0,
+                FOREIGN KEY (user_id) REFERENCES users (user_id)
+            )''')
+            connection.commit()
+            connection.close()
 
 
 # for registering new users during sign up
@@ -65,34 +72,34 @@ def authenticate_user(username, password):
     return user
 
 
-#for adding transactions (expenses) to the database
+#for adding transactions (expenses/income) to the database
 def init_db():
-    # Open the connection once
     connection = sqlite3.connect("cashatan.db")
     cursor = connection.cursor()
-    
-    # Enable foreign keys for this session
     cursor.execute("PRAGMA foreign_keys = ON;")
 
-    # Table A: Users (Make sure this is here if you haven't created it yet)
+    # Table A: Users
     cursor.execute('''CREATE TABLE IF NOT EXISTS users (
         user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        full_name TEXT,
+        email TEXT UNIQUE,
         username TEXT UNIQUE NOT NULL,
         password TEXT NOT NULL
     )''')
 
-    # Table B: Expenses (Your updated code)
-    cursor.execute('''CREATE TABLE IF NOT EXISTS expenses (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL,
-        date TEXT,
-        category TEXT,
-        amount REAL,
-        notes TEXT,
-        FOREIGN KEY (user_id) REFERENCES users (user_id)
-    )''')
+    # Table B: Transactions (This replaces 'expenses')
+    cursor.execute(''' CREATE TABLE IF NOT EXISTS transactions (
+                transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                type TEXT NOT NULL,     -- 'Income' or 'Expense'
+                amount REAL NOT NULL,
+                category TEXT,          -- Category for expenses, Source for income
+                date TEXT NOT NULL,
+                notes TEXT,
+                FOREIGN KEY (user_id) REFERENCES users (user_id)
+            )
+        ''')
     
-    # Commit and close ONLY after both tables are handled
     connection.commit()
     connection.close()
 
@@ -348,18 +355,21 @@ class AddExpensePage(tk.Frame):
             return
 
         try:
-            connection = sqlite3.connect("cashatan.db")
-            cursor = connection.cursor()
-            cursor.execute("PRAGMA foreign_keys = ON;") 
-            
-            query = """INSERT INTO expenses (user_id, date, category, amount, notes) 
-                    VALUES (?, ?, ?, ?, ?)"""
-            cursor.execute(query, (u_id, date, category, float(amount), notes))
-            
-            connection.commit()
-            connection.close()
+            # We use a context manager (with) to ensure the connection closes
+            with sqlite3.connect("cashatan.db", timeout=10) as connection:
+                cursor = connection.cursor()
+                cursor.execute("PRAGMA foreign_keys = ON;") 
+                
+                # 1. Point to 'transactions' instead of 'expenses'
+                # 2. Include the 'type' column
+                query = """INSERT INTO transactions (user_id, type, amount, category, date, notes) 
+                        VALUES (?, ?, ?, ?, ?, ?)"""
+                
+                # 3. Pass 'Expense' as the type
+                cursor.execute(query, (u_id, 'Expense', float(amount), category, date, notes))
+                connection.commit()
 
-            messagebox.showinfo("Success", "Expense saved to your account!")
+            messagebox.showinfo("Success", "Expense saved successfully!")
             self.clear_entries()
             
         except ValueError:
@@ -373,18 +383,104 @@ class AddExpensePage(tk.Frame):
         for entry in self.entries.values():
             entry.delete(0, tk.END)
 
+
 class AddIncomePage(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent)
-        tk.Label(self, text="ADD INCOME", font=("Arial", 18, "bold")).pack(pady=20) # [cite: 93]
-        
-        # Input fields for earnings [cite: 94-97]
-        for field in ["Date:", "Income Source:", "Amount:", "Notes:"]:
-            tk.Label(self, text=field).pack()
-            tk.Entry(self).pack(pady=2)
+        self.controller = controller
 
-        tk.Button(self, text="SAVE BUDGET", command=None).pack(pady=10) # [cite: 98]
-        tk.Button(self, text="BACK TO DASHBOARD", command=lambda: controller.show_frame("DashboardPage")).pack() # [cite: 99]
+        # 1. Title
+        tk.Label(self, text="ADD INCOME", font=("Arial", 18, "bold")).pack(pady=20)
+
+        # 2. Form Container (Grid Layout)
+        form_frame = tk.Frame(self)
+        form_frame.pack(pady=10)
+
+        # 3. Input Fields
+        # Note: "Income Source" maps to the 'category' column in your DB
+        fields = ["Date:", "Source:", "Amount:", "Notes:"]
+        self.entries = {} 
+
+        # Specific categories for Income
+        income_sources = ["Salary", "Freelance", "Allowance", "Gift", "Investment", "Others"]
+
+        for i, field in enumerate(fields):
+            lbl = tk.Label(form_frame, text=field, font=("Arial", 10))
+            lbl.grid(row=i, column=0, padx=10, pady=5, sticky="e")
+            
+            if field == "Date:":
+                entry = DateEntry(form_frame, width=23, background='darkblue', 
+                                  foreground='white', borderwidth=2, 
+                                  date_pattern='y-mm-dd')
+            
+            elif field == "Source:":
+                entry = ttk.Combobox(form_frame, values=income_sources, width=23, state="readonly")
+                entry.set("Select Source")
+            
+            else:
+                entry = tk.Entry(form_frame, font=("Arial", 10), width=25)
+            
+            entry.grid(row=i, column=1, padx=10, pady=5, sticky="w")
+            self.entries[field] = entry
+
+        # 4. Buttons
+        button_frame = tk.Frame(self)
+        button_frame.pack(pady=(20, 20))
+
+        tk.Button(button_frame, text="SAVE INCOME", 
+                  width=18, command=self.save_income_to_db).pack(side="left", padx=5)
+        
+        tk.Button(button_frame, text="BACK TO DASHBOARD", 
+                  width=18, command=lambda: controller.show_frame("DashboardPage")).pack(side="left", padx=5)
+
+    #database interaction for saving income data to the database
+    def save_income_to_db(self):
+        """Saves income data specifically to the transactions table."""
+        date = self.entries["Date:"].get()
+        source = self.entries["Source:"].get()
+        amount = self.entries["Amount:"].get()
+        notes = self.entries["Notes:"].get()
+    
+        u_id = getattr(self.controller, 'current_user_id', None) 
+        
+        if u_id is None:
+            messagebox.showerror("Error", "No user logged in!")
+            return
+
+        if not date or source == "Select Source" or not amount:
+            messagebox.showwarning("Input Error", "Please fill in Date, Source, and Amount.")
+            return
+
+        try:
+            # Using 'with' to prevent the "database is locked" error
+            with sqlite3.connect("cashatan.db", timeout=10) as connection:
+                cursor = connection.cursor()
+                cursor.execute("PRAGMA foreign_keys = ON;") 
+                
+                # We hardcode 'Income' into the type column
+                query = """INSERT INTO transactions (user_id, type, amount, category, date, notes) 
+                        VALUES (?, ?, ?, ?, ?, ?)"""
+                cursor.execute(query, (u_id, 'Income', float(amount), source, date, notes))
+                connection.commit()
+
+            messagebox.showinfo("Success", "Income added successfully!")
+            self.clear_entries()
+            
+        except ValueError:
+            messagebox.showerror("Error", "Amount must be a number.")
+        except sqlite3.OperationalError:
+            messagebox.showerror("Database Error", "Database is busy. Try again in a moment.")
+
+    #for cleraing the entry fields after saving an income
+    def clear_entries(self):
+        """Resets the form"""
+        for field, widget in self.entries.items():
+            if field == "Source:":
+                widget.set("Select Source")
+            elif field != "Date:": # Keep the date as is for convenience
+                widget.delete(0, tk.END)
+
+
 
 
 # --- 5. DATA TABLE TEMPLATE (VIEW TRANSACTIONS) [cite: 114] ---
