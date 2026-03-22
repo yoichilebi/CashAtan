@@ -1,48 +1,51 @@
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, filedialog
+from PIL import Image, ImageTk
 import sqlite3
 from tkcalendar import DateEntry
+from datetime import date
 
 # ==========================================
 # 1. DATABASE INITIALIZATION
 # ==========================================
 def init_db():
     with sqlite3.connect("cashatan.db") as connection:
-            cursor = connection.cursor()
-            cursor.execute("PRAGMA foreign_keys = ON;")
+        cursor = connection.cursor()
+        cursor.execute("PRAGMA foreign_keys = ON;")
 
-            # 1. Users Table
-            cursor.execute('''CREATE TABLE IF NOT EXISTS users (
-                user_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                full_name TEXT NOT NULL,
-                email TEXT UNIQUE NOT NULL,
-                username TEXT UNIQUE NOT NULL,
-                password TEXT NOT NULL
-            )''')
+        # 1. Users Table
+        # Fixed: Added missing comma after password
+        cursor.execute('''CREATE TABLE IF NOT EXISTS users (
+            user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            full_name TEXT NOT NULL,
+            email TEXT UNIQUE NOT NULL,
+            username TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            profile_pic TEXT
+        )''')
 
-            # 2. Transactions Table (Handles both Income & Expenses)
-            cursor.execute('''CREATE TABLE IF NOT EXISTS transactions (
-                transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER NOT NULL,
-                type TEXT NOT NULL,     -- 'Income' or 'Expense'
-                amount REAL NOT NULL,
-                category TEXT,
-                date TEXT NOT NULL,
-                notes TEXT,
-                FOREIGN KEY (user_id) REFERENCES users (user_id)
-            )''')
+        # 2. Transactions Table
+        cursor.execute('''CREATE TABLE IF NOT EXISTS transactions (
+            transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            type TEXT NOT NULL,
+            amount REAL NOT NULL,
+            category TEXT,
+            date TEXT NOT NULL,
+            notes TEXT,
+            FOREIGN KEY (user_id) REFERENCES users (user_id)
+        )''')
 
-            # 3. Budgets Table
-            cursor.execute('''CREATE TABLE IF NOT EXISTS budgets (
-                budget_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER UNIQUE NOT NULL,
-                monthly_income REAL DEFAULT 0.0,
-                savings_goal REAL DEFAULT 0.0,
-                FOREIGN KEY (user_id) REFERENCES users (user_id)
-            )''')
-            connection.commit()
-            connection.close()
-
+        # 3. Budgets Table
+        cursor.execute('''CREATE TABLE IF NOT EXISTS budgets (
+            budget_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER UNIQUE NOT NULL,
+            monthly_income REAL DEFAULT 0.0,
+            savings_goal REAL DEFAULT 0.0,
+            FOREIGN KEY (user_id) REFERENCES users (user_id)
+        )''')
+        
+        connection.commit()
 
 # for registering new users during sign up
 def register_user(full_name, email, username, password):
@@ -71,37 +74,7 @@ def authenticate_user(username, password):
     connection.close()
     return user
 
-
-#for adding transactions (expenses/income) to the database
-def init_db():
-    connection = sqlite3.connect("cashatan.db")
-    cursor = connection.cursor()
-    cursor.execute("PRAGMA foreign_keys = ON;")
-
-    # Table A: Users
-    cursor.execute('''CREATE TABLE IF NOT EXISTS users (
-        user_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        full_name TEXT,
-        email TEXT UNIQUE,
-        username TEXT UNIQUE NOT NULL,
-        password TEXT NOT NULL
-    )''')
-
-    # Table B: Transactions (This replaces 'expenses')
-    cursor.execute(''' CREATE TABLE IF NOT EXISTS transactions (
-                transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER NOT NULL,
-                type TEXT NOT NULL,     -- 'Income' or 'Expense'
-                amount REAL NOT NULL,
-                category TEXT,          -- Category for expenses, Source for income
-                date TEXT NOT NULL,
-                notes TEXT,
-                FOREIGN KEY (user_id) REFERENCES users (user_id)
-            )
-        ''')
     
-    connection.commit()
-    connection.close()
 
 # ==========================================
 # 2. MAIN APPLICATION CONTROLLER
@@ -208,6 +181,8 @@ class LoginPage(tk.Frame):
 class SignUpPage(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent)
+        self.controller = controller
+        
         tk.Label(self, text="SIGN UP", font=("Arial", 18, "bold")).pack(pady=20) # [cite: 54]
         
 
@@ -275,20 +250,235 @@ class SignUpPage(tk.Frame):
 # --- 3. DASHBOARD (CENTRAL HUB) [cite: 77, 78] ---
 class DashboardPage(tk.Frame):
     def __init__(self, parent, controller):
-        super().__init__(parent)
-        tk.Label(self, text="DASHBOARD", font=("Arial", 18, "bold")).pack(pady=10) # [cite: 65]
-        
-        nav_frame = tk.Frame(self)
-        nav_frame.pack(side="left", padx=20, fill="y")
-        
-        # Navigation Hub buttons [cite: 66, 67, 68, 71, 72]
-        tk.Button(nav_frame, text="ADD EXPENSE", width=20, command=lambda: controller.show_frame("AddExpensePage")).pack(pady=5)
-        tk.Button(nav_frame, text="ADD INCOME", width=20, command=lambda: controller.show_frame("AddIncomePage")).pack(pady=5)
-        tk.Button(nav_frame, text="VIEW TRANSACTIONS", width=20, command=lambda: controller.show_frame("ViewTransactionsPage")).pack(pady=5)
-        tk.Button(nav_frame, text="BUDGET OVERVIEW", width=20, command=lambda: controller.show_frame("BudgetOverviewPage")).pack(pady=5)
-        tk.Button(nav_frame, text="LOGOUT", width=20, command=lambda: controller.show_frame("LoginPage")).pack(pady=20)
+            super().__init__(parent)
+            self.controller = controller
+
+            # Page Title
+            tk.Label(self, text="DASHBOARD", font=("Arial", 24, "bold")).pack(pady=20)
+
+            # Main Layout Container
+            main_container = tk.Frame(self)
+            main_container.pack(fill="both", expand=True, padx=20)
+
+            # --- LEFT SIDE: NAVIGATION BUTTONS ---
+            nav_frame = tk.Frame(main_container)
+            nav_frame.pack(side="left", fill="y", padx=(0, 30))
+
+            btns = [
+                ("ADD EXPENSE", "AddExpensePage"),
+                ("ADD INCOME", "AddIncomePage"),
+                ("VIEW TRANSACTIONS", "ViewTransactionsPage"),
+                ("BUDGET OVERVIEW", "BudgetOverviewPage")
+            ]
+
+            for text, page in btns:
+                tk.Button(nav_frame, text=text, width=25, height=2, font=("Arial", 11, "bold"),
+                        command=lambda p=page: controller.show_frame(p)).pack(pady=10)
+
+            tk.Button(nav_frame, text="LOGOUT", width=25, height=2, font=("Arial", 11, "bold"),
+                    bg="#333", fg="white", command=lambda: controller.show_frame("LoginPage")).pack(pady=20)
+
+            # --- RIGHT SIDE: MINI PROFILE ---
+            profile_frame = tk.LabelFrame(main_container, text="Profile", font=("Arial", 12, "bold"), padx=20, pady=20)
+            profile_frame.pack(side="right", fill="both", expand=True)
+
+            # Top section: Image and Username/Date/Goal
+            top_row = tk.Frame(profile_frame)
+            top_row.pack(fill="x")
+
+            # Profile Image Slot
+            # Inside your DashboardPage __init__
+            self.img_label = tk.Label(top_row, bg="#ddd", relief="solid", borderwidth=1)
+            self.img_label.grid(row=0, column=0, rowspan=4, padx=(0, 20), sticky="nsew")
+
+            # Create a "blank" square image to hold the space if no photo is uploaded yet
+            placeholder = Image.new('RGB', (150, 150), color = '#ddd')
+            self.ph_img = ImageTk.PhotoImage(placeholder)
+            self.img_label.config(image=self.ph_img)
 
 
+            # Identity Variables
+            self.username_var = tk.StringVar(value="username")
+            self.date_var = tk.StringVar(value=date.today().strftime("%m/%d/%Y"))
+            self.goal_var = tk.StringVar(value="Budget Goal: ₱0.00")
+
+            # row=0: Username (No box)
+            tk.Label(top_row, textvariable=self.username_var, font=("Arial", 12, "bold"), 
+                    anchor="w").grid(row=0, column=1, pady=2, padx=10, sticky="w")
+            
+            # row=1: Date (No box)
+            tk.Label(top_row, textvariable=self.date_var, font=("Arial", 10), 
+                    fg="gray", anchor="w").grid(row=1, column=1, pady=2, padx=10, sticky="w")
+            
+            # row=2: Budget Goal Input Section
+            goal_input_frame = tk.Frame(top_row)
+            goal_input_frame.grid(row=2, column=1, pady=5, padx=10, sticky="w")
+
+            tk.Label(goal_input_frame, text="Budget Goal: ₱", font=("Arial", 10)).pack(side="left")
+            
+            # This is where the user types the number
+            self.goal_entry = tk.Entry(goal_input_frame, width=15, font=("Arial", 10))
+            self.goal_entry.pack(side="left", padx=2)
+
+            # Small button to save the goal to the database
+            tk.Button(goal_input_frame, text="Set", font=("Arial", 8, "bold"), 
+                  bg="#2196F3", fg="white", command=self.save_goal).pack(side="left", padx=5)
+            
+            # row=3: Upload Button
+            tk.Button(top_row, text="Upload Photo", font=("Arial", 8), 
+                    command=self.upload_photo).grid(row=3, column=1, pady=5, padx=10, sticky="w")
+
+
+            # Bottom section: Financial Stats
+            stats_frame = tk.Frame(profile_frame)
+            
+            stats_frame.pack(fill="x", pady=20, anchor="w")
+
+            self.expense_var = tk.StringVar(value="Total Expenses: ₱0.00")
+            self.savings_var = tk.StringVar(value="Total Savings: ₱0.00")
+
+            tk.Label(stats_frame, textvariable=self.expense_var, bg="#ccc", 
+                    width=45, anchor="w", padx=10, font=("Arial", 10, "bold")).pack(pady=5, anchor="w")           
+            tk.Label(stats_frame, textvariable=self.savings_var, bg="#ccc", 
+                    width=45, anchor="w", padx=10, font=("Arial", 10, "bold")).pack(pady=5, anchor="w")
+
+    #fpr dashboard profile picture upload
+    def upload_photo(self):
+        """Allows user to pick an image and saves the path to the DB."""
+        # This now works because of the updated import
+        file_path = filedialog.askopenfilename(filetypes=[("Image Files", "*.png *.jpg *.jpeg")])
+        
+        if file_path:
+            u_id = self.controller.current_user_id
+            try:
+                # Using 'connection' as requested
+                with sqlite3.connect("cashatan.db") as connection:
+                    connection.execute("UPDATE users SET profile_pic = ? WHERE user_id = ?", (file_path, u_id))
+                    connection.commit()
+                
+                messagebox.showinfo("Success", "Profile picture updated!")
+                self.load_data() # Refresh to show the new image
+            except sqlite3.Error as e:
+                messagebox.showerror("Database Error", f"Could not save image path: {e}")
+
+    def load_data(self):
+        """Fetches profile info and financial totals."""
+        u_id = getattr(self.controller, 'current_user_id', None)
+        if u_id is None: return
+
+        try:
+            # Using 'connection' as requested
+            with sqlite3.connect("cashatan.db") as connection:
+                cursor = connection.cursor()
+                
+                # 1. Get User Details
+                cursor.execute("SELECT username, profile_pic FROM users WHERE user_id = ?", (u_id,))
+                user_info = cursor.fetchone()
+                
+                if user_info:
+                    self.username_var.set(user_info[0])
+                    # Load Image from the saved path
+                    if user_info[1]:
+                        try:
+                            img = Image.open(user_info[1])
+                            img = img.resize((120, 120), Image.Resampling.LANCZOS)
+                            photo = ImageTk.PhotoImage(img)
+                            self.img_label.config(image=photo, text="")
+                            self.img_label.image = photo 
+                        except Exception:
+                            self.img_label.config(image='', text="Image Error")
+
+                # 2. Get Budget Goal (From budgets table)
+                cursor.execute("SELECT savings_goal FROM budgets WHERE user_id = ?", (u_id,))
+                goal_result = cursor.fetchone()
+                
+                # Clear the box and put the existing goal in it
+                self.goal_entry.delete(0, tk.END)
+                if goal_result:
+                    self.goal_entry.insert(0, f"{goal_result[0]:.2f}")
+                else:
+                    self.goal_entry.insert(0, "0.00")
+
+                # 3. Calculate Totals (From transactions table)
+                cursor.execute("SELECT type, SUM(amount) FROM transactions WHERE user_id = ? GROUP BY type", (u_id,))
+                totals = dict(cursor.fetchall())
+                income = totals.get('Income', 0.0)
+                expense = totals.get('Expense', 0.0)
+                savings = income - expense
+
+                self.expense_var.set(f"Total Expenses: ₱{expense:,.2f}")
+                self.savings_var.set(f"Total Savings: ₱{savings:,.2f}")
+
+        except Exception as e:
+            # This helps catch that 'no such column' error if the DB isn't updated
+            print(f"Error loading dashboard: {e}")
+        
+        def save_goal(self):
+            """Saves the typed budget goal into the budgets table."""
+            u_id = getattr(self.controller, 'current_user_id', None)
+            new_goal = self.goal_entry.get()
+
+            if not u_id:
+                messagebox.showerror("Error", "User not found.")
+                return
+
+            try:
+                # Convert input to a float number
+                goal_value = float(new_goal)
+                
+                with sqlite3.connect("cashatan.db") as connection:
+                    cursor = connection.cursor()
+                    # 'INSERT OR REPLACE' updates the row if the user_id already exists
+                    query = """INSERT INTO budgets (user_id, savings_goal) 
+                            VALUES (?, ?) 
+                            ON CONFLICT(user_id) DO UPDATE SET savings_goal = excluded.savings_goal"""
+                    cursor.execute(query, (u_id, goal_value))
+                    connection.commit()
+                
+                messagebox.showinfo("Success", f"Budget Goal set to ₱{goal_value:,.2f}")
+                self.load_data() # Refresh the profile stats
+
+            except ValueError:
+                messagebox.showerror("Invalid Input", "Please enter a valid number for your goal.")
+            except sqlite3.Error as e:
+                messagebox.showerror("Database Error", f"Error saving goal: {e}")
+
+    def save_goal(self):
+        """Saves the typed budget goal into the budgets table."""
+        # 1. Get the current user ID and the typed goal
+        u_id = getattr(self.controller, 'current_user_id', None)
+        new_goal = self.goal_entry.get()
+
+        if not u_id:
+            messagebox.showerror("Error", "User not found. Please log in again.")
+            return
+
+        try:
+            # 2. Convert the input to a number
+            goal_value = float(new_goal)
+            
+            # 3. Save to database using your 'connection' naming
+            with sqlite3.connect("cashatan.db") as connection:
+                cursor = connection.cursor()
+                
+                # This SQL command updates the goal if the user_id exists, 
+                # or creates a new row if it doesn't.
+                query = """INSERT INTO budgets (user_id, savings_goal) 
+                           VALUES (?, ?) 
+                           ON CONFLICT(user_id) DO UPDATE SET savings_goal = excluded.savings_goal"""
+                
+                cursor.execute(query, (u_id, goal_value))
+                connection.commit()
+            
+            messagebox.showinfo("Success", f"Budget Goal set to ₱{goal_value:,.2f}")
+            
+            # 4. Refresh the dashboard so all numbers update
+            self.load_data()
+
+        except ValueError:
+            messagebox.showerror("Invalid Input", "Please enter a valid number for your goal.")
+        except sqlite3.Error as e:
+            messagebox.showerror("Database Error", f"Error saving goal: {e}")
 # --- 4. FORM TEMPLATE (ADD EXPENSE/INCOME) [cite: 89, 101] ---
 class AddExpensePage(tk.Frame):
     def __init__(self, parent, controller):
