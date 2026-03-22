@@ -379,9 +379,14 @@ class AddExpensePage(tk.Frame):
 
     #for clring the entry fields after saving an expense
     def clear_entries(self):
-        """Clears the boxes so you can add another expense immediately"""
-        for entry in self.entries.values():
-            entry.delete(0, tk.END)
+        """Clears the entry boxes and resets the dropdown selection."""
+        for field, widget in self.entries.items():
+            if field == "Category:":
+                # Reset the dropdown to the placeholder text
+                widget.set("Select Category")
+            elif field != "Date:":
+                # Clear standard text entries (Amount and Notes)
+                widget.delete(0, tk.END)
 
 
 class AddIncomePage(tk.Frame):
