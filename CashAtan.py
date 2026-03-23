@@ -819,15 +819,13 @@ class BudgetOverviewPage(tk.Frame):
 
         tk.Frame(self, height=2, bg="black").pack(fill="x", padx=20)
 
-        # --- MAIN CONTENT AREA (The Grid Fix) ---
+        # --- MAIN CONTENT AREA ---
         content_frame = tk.Frame(self, bg="white")
         content_frame.pack(fill="both", expand=True, padx=20, pady=10)
-        
-        # Configure columns to be equal width
         content_frame.columnconfigure(0, weight=1)
         content_frame.columnconfigure(1, weight=1)
 
-        # ROW 0, COL 0: Monthly Stats Box
+        # BOXES (Stats, Summary, Progress)
         stats_box = tk.Frame(content_frame, bg="#d9d9d9", padx=15, pady=15, relief="solid", borderwidth=1)
         stats_box.grid(row=0, column=0, sticky="nsew", padx=(0, 10), pady=(0, 10))
         
@@ -838,7 +836,6 @@ class BudgetOverviewPage(tk.Frame):
         self.lbl_avail_exp = tk.Label(stats_box, text="Available for Expenses: ₱0", font=("Arial", 11, "bold"), bg="#b3b3b3", relief="solid", borderwidth=1, anchor="w", padx=5)
         self.lbl_avail_exp.pack(fill="x", pady=2)
 
-        # ROW 0, COL 1: Expense Summary & Savings Progress (Aligned to Stats Box)
         top_right_container = tk.Frame(content_frame, bg="white")
         top_right_container.grid(row=0, column=1, sticky="nsew", pady=(0, 10))
         top_right_container.columnconfigure(0, weight=1)
@@ -860,7 +857,7 @@ class BudgetOverviewPage(tk.Frame):
         self.lbl_progress_text = tk.Label(progress_box, text="0% of Goal\nAchieved", font=("Arial", 10, "bold"), bg="white", justify="left")
         self.lbl_progress_text.pack(side="left", padx=5)
 
-        # ROW 1, COL 0: The Breakdowns (Stacked)
+        # BREAKDOWNS
         breakdown_container = tk.Frame(content_frame, bg="white")
         breakdown_container.grid(row=1, column=0, sticky="nsew", padx=(0, 10))
 
@@ -876,9 +873,9 @@ class BudgetOverviewPage(tk.Frame):
         self.income_rows = tk.Frame(self.income_box, bg="white")
         self.income_rows.pack(fill="both", expand=True)
 
-        # ROW 1, COL 1: Charts Area (Aligned to match total height of breakdowns)
+        # --- CHARTS AREA WITH DYNAMIC BINDING ---
         charts_box = tk.Frame(content_frame, bg="#d9d9d9", padx=10, pady=10, relief="solid", borderwidth=1)
-        charts_box.grid(row=1, column=1, sticky="nsew") # sticky="nsew" makes it span the height!
+        charts_box.grid(row=1, column=1, sticky="nsew")
         
         chart_titles = tk.Frame(charts_box, bg="#d9d9d9")
         chart_titles.pack(fill="x")
@@ -888,7 +885,10 @@ class BudgetOverviewPage(tk.Frame):
         self.chart_canvas = tk.Canvas(charts_box, bg="#d9d9d9", highlightthickness=0)
         self.chart_canvas.pack(fill="both", expand=True)
 
-        # --- FOOTER (Keep as is) ---
+        # THE FIX: This line tells the canvas to redraw everything whenever it is resized
+        self.chart_canvas.bind("<Configure>", lambda event: self.load_data())
+
+        # FOOTER
         footer_frame = tk.Frame(self, bg="white")
         footer_frame.pack(fill="x", side="bottom", pady=20)
         btn_style = {"font": ("Arial", 12, "bold"), "bg": "#d9d9d9", "relief": "solid", "borderwidth": 2, "height": 2, "width": 20}
@@ -899,33 +899,35 @@ class BudgetOverviewPage(tk.Frame):
     def load_data(self):
         u_id = getattr(self.controller, 'current_user_id', None)
         if not u_id: return
- 
-        # 1. PROFILE & HEADER
-        # --- THE FIX: CLEAR CANVAS & RESET DEFAULT ---
+
+        # Force Tkinter to refresh current dimensions so we get the REAL width
+        self.update_idletasks()
+        canvas_w = self.chart_canvas.winfo_width()
+        
+        # Default fallback for initial load
+        if canvas_w < 10: canvas_w = 450 
+
+        # Reset Header Icon
         self.canvas_user.delete("all")
-        # Pre-draw the default black circle
         self.canvas_user.create_oval(5, 5, 35, 35, fill="black")
 
         try:
             with sqlite3.connect("cashatan.db") as connection:
                 cursor = connection.cursor()
                 
-                # 1. Header & Profile
+                # 1. Header Profile
                 cursor.execute("SELECT username, profile_pic FROM users WHERE user_id=?", (u_id,))
                 user = cursor.fetchone()
-                
                 if user:
                     self.lbl_username.config(text=user[0])
-                    if user[1]: # If they have a photo path
+                    if user[1]:
                         try:
                             img = Image.open(user[1]).resize((30, 30), Image.Resampling.LANCZOS)
                             self.profile_photo = ImageTk.PhotoImage(img)
-                            # Draw the image OVER the black circle
                             self.canvas_user.create_image(20, 20, image=self.profile_photo)
-                        except:
-                            pass
+                        except: pass
 
-                # 2. FINANCIAL CALCULATIONS
+                # 2. Financial Logic
                 cursor.execute("SELECT savings_goal FROM budgets WHERE user_id=?", (u_id,))
                 goal_data = cursor.fetchone()
                 goal = goal_data[0] if goal_data else 0.0
@@ -939,15 +941,14 @@ class BudgetOverviewPage(tk.Frame):
                 progress_pct = (avail_for_exp / goal * 100) if goal > 0 else 0
                 progress_pct = max(0, min(progress_pct, 100))
 
-                # Update Labels
+                # Labels
                 self.lbl_monthly_inc.config(text=f"Total Monthly Income: ₱{total_income:,.2f}")
                 self.lbl_savings_goal.config(text=f"Monthly Savings Goal: ₱{goal:,.2f}")
                 self.lbl_avail_exp.config(text=f"Available for Expenses (Savings): ₱{avail_for_exp:,.2f}")
                 self.lbl_total_exp.config(text=f"Total Expenses: ₱{total_expenses:,.2f}")
                 self.lbl_remain_bud.config(text=f"Remaining Budget (Savings): ₱{avail_for_exp:,.2f}")
 
-                # 3. BREAKDOWNS (Expense & Income)
-                # Expense
+                # 3. Breakdowns
                 for w in self.expense_rows.winfo_children(): w.destroy()
                 cursor.execute("SELECT category, SUM(amount) FROM transactions WHERE user_id=? AND type='Expense' GROUP BY category", (u_id,))
                 exp_cats = cursor.fetchall()
@@ -957,7 +958,6 @@ class BudgetOverviewPage(tk.Frame):
                     tk.Label(row, text=cat, bg="white").pack(side="left")
                     tk.Label(row, text=f"₱{amt:,.0f}", bg="white", font=("Arial", 10, "bold")).pack(side="right")
 
-                # Income
                 for w in self.income_rows.winfo_children(): w.destroy()
                 cursor.execute("SELECT category, SUM(amount) FROM transactions WHERE user_id=? AND type='Income' GROUP BY category", (u_id,))
                 for src, amt in cursor.fetchall():
@@ -966,7 +966,7 @@ class BudgetOverviewPage(tk.Frame):
                     tk.Label(row, text=src, bg="white").pack(side="left")
                     tk.Label(row, text=f"₱{amt:,.0f}", bg="white", font=("Arial", 10, "bold")).pack(side="right")
 
-                # 4. PROGRESS GAUGE
+                # 4. Progress Gauge
                 self.gauge_canvas.delete("all")
                 self.gauge_canvas.create_oval(10, 10, 70, 70, outline="#d9d9d9", width=4)
                 extent = -(progress_pct / 100) * 359.9
@@ -974,73 +974,49 @@ class BudgetOverviewPage(tk.Frame):
                 self.gauge_canvas.create_text(40, 40, text=f"{int(progress_pct)}%", font=("Arial", 10, "bold"))
                 self.lbl_progress_text.config(text=f"{int(progress_pct)}% of Goal\nAchieved")
 
-                # 5. CHARTS (Pie & Line with Labels and Legend)
+                # --- 5. DYNAMIC CHARTS REDRAW ---
                 self.chart_canvas.delete("all")
                 
-                # --- PIE CHART & LEGEND ---
+                # PIE CHART POSITION (Relative to right edge)
+                pie_center_x = canvas_w - 120 
+                
                 if total_expenses > 0:
                     start_ang = 90
                     colors = ["#333", "#555", "#777", "#999", "#bbb", "#ddd"]
-                    
                     for i, (cat, amt) in enumerate(exp_cats):
-                        # 1. Calculate the slice extent
                         extent = -(amt / total_expenses) * 359.9
-                        
-                        # 2. Calculate the percentage for the legend
                         percentage = (amt / total_expenses) * 100
                         
                         # Draw Pie Slice
-                        self.chart_canvas.create_arc(300, 15, 400, 115, 
+                        self.chart_canvas.create_arc(pie_center_x - 50, 15, pie_center_x + 50, 115, 
                                                      start=start_ang, extent=extent, 
                                                      fill=colors[i % len(colors)], outline="white")
                         
-                        # --- UPDATED LEGEND WITH PERCENTAGE ---
-                        lx = 300 
-                        ly = 140 + (i * 20) 
-                        
-                        # Color Square
-                        self.chart_canvas.create_rectangle(lx, ly, lx+12, ly+12, 
-                                                           fill=colors[i % len(colors)], outline="black")
-                        
-                        # Category Text: Now includes the Peso amount and the Percentage
-                        # Format: Category: ₱449 (68.5%)
-                        legend_text = f"{cat}: ₱{amt:,.0f} ({percentage:.1f}%)"
-                        
-                        self.chart_canvas.create_text(lx + 20, ly + 6, text=legend_text, 
+                        # Dynamic Legend
+                        lx = pie_center_x - 70
+                        ly = 135 + (i * 18)
+                        self.chart_canvas.create_rectangle(lx, ly, lx+10, ly+10, fill=colors[i % len(colors)])
+                        self.chart_canvas.create_text(lx + 15, ly + 5, text=f"{cat}: ({percentage:.1f}%)", 
                                                       font=("Arial", 7, "bold"), anchor="w")
-                        
                         start_ang += extent
 
-                # --- LINE CHART & X-AXIS LABELS ---
-                # We pull dates AND amounts for the last 5 transactions
-                cursor.execute("""SELECT date, amount FROM transactions 
-                                  WHERE user_id=? AND type='Expense' 
-                                  ORDER BY date DESC LIMIT 5""", (u_id,))
-                data_points = cursor.fetchall()[::-1] # Reverse to chronological
-                
+                # LINE CHART (Anchored to Left)
+                cursor.execute("SELECT date, amount FROM transactions WHERE user_id=? AND type='Expense' ORDER BY date DESC LIMIT 5", (u_id,))
+                data_points = cursor.fetchall()[::-1]
                 if data_points:
                     max_v = max(float(d[1]) for d in data_points) if max(float(d[1]) for d in data_points) > 0 else 1
                     pts = []
-                    
                     for i, (t_date, val) in enumerate(data_points):
-                        x = 25 + (i * 30)
-                        y = 115 - (float(val) / max_v * 85)
+                        x = 30 + (i * 35)
+                        y = 110 - (float(val) / max_v * 75)
                         pts.extend([x, y])
-                        
-                        # --- DRAW X-AXIS DATE LABELS ---
-                        # We only show the last 5 chars of the date (e.g., '03-23') to save space
-                        short_date = t_date[-5:] 
-                        self.chart_canvas.create_text(x, 130, text=short_date, 
-                                                      font=("Arial", 7, "bold"), angle=45)
-
+                        self.chart_canvas.create_text(x, 125, text=t_date[-5:], font=("Arial", 7), angle=45)
                     if len(pts) > 2:
                         self.chart_canvas.create_line(pts, width=2, fill="black", smooth=True)
-                        for j in range(0, len(pts), 2):
-                            self.chart_canvas.create_oval(pts[j]-2, pts[j+1]-2, pts[j]+2, pts[j+1]+2, fill="black")
                 
-                # Draw the Chart Axis
-                self.chart_canvas.create_line(20, 120, 160, 120, width=1) # X-axis
-                self.chart_canvas.create_line(20, 20, 20, 120, width=1)   # Y-axis
+                # Draw Axis
+                self.chart_canvas.create_line(25, 115, 180, 115) 
+                self.chart_canvas.create_line(25, 20, 25, 115)
 
         except Exception as e:
             print(f"Error updating Overview: {e}")
