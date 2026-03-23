@@ -676,6 +676,7 @@ class ViewTransactionsPage(tk.Frame):
         # Header
         tk.Label(self, text="VIEW TRANSACTIONS", font=("Arial", 26, "bold"), 
                  bg="white", fg="black").pack(pady=(20, 10))
+        tk.Frame(self, height=2, bg="black").pack(fill="x", padx=20)
         
         # --- UI UPDATED: FORCED GRID LINES & COLORS ---
         style = ttk.Style()
