@@ -125,47 +125,63 @@ class LoginPage(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent)
         self.controller = controller
-        self.configure(bg="white") # Match Budget Overview background
+        # Main background: Deepest Navy
+        self.configure(bg="#0B132B") 
 
         # --- HEADER SECTION ---
-        header_frame = tk.Frame(self, bg="white")
+        header_frame = tk.Frame(self, bg="#0B132B")
         header_frame.pack(fill="x", padx=20, pady=(20, 10))
 
-        tk.Label(header_frame, text="LOGIN / SIGN UP", font=("Arial", 24, "bold"), bg="white").pack()
-        # The iconic black divider line
-        tk.Frame(self, height=2, bg="black").pack(fill="x", padx=20, pady=(0, 40))
+        tk.Label(header_frame, text="LOGIN / SIGN UP", font=("Arial", 24, "bold"), 
+                 bg="#0B132B", fg="#FFFFFF").pack()
+        
+        # Divider line: Steel Blue accent
+        tk.Frame(self, height=2, bg="#3A506B").pack(fill="x", padx=20, pady=(0, 40))
 
         # --- FORM SECTION ---
-        form_container = tk.Frame(self, bg="white")
+        form_container = tk.Frame(self, bg="#0B132B")
         form_container.pack(expand=True)
 
         self.var_show_pass = tk.BooleanVar(value=False)
 
         # Labels and Entries with consistent styling
         label_font = ("Arial", 14)
-        tk.Label(form_container, text="Username:", font=label_font, bg="white").grid(row=0, column=0, sticky="e", pady=10, padx=10)
-        self.username_entry = tk.Entry(form_container, font=("Arial", 12), width=30, relief="solid", borderwidth=1)
+        
+        tk.Label(form_container, text="Username:", font=label_font, 
+                 bg="#0B132B", fg="#FFFFFF").grid(row=0, column=0, sticky="e", pady=10, padx=10)
+        
+        # Entry background: Dark Navy
+        self.username_entry = tk.Entry(form_container, font=("Arial", 12), width=30, 
+                                       relief="solid", borderwidth=1, 
+                                       bg="#1C2541", fg="#FFFFFF", insertbackground="#FFFFFF")
         self.username_entry.grid(row=0, column=1, pady=10)
 
-        tk.Label(form_container, text="Password:", font=label_font, bg="white").grid(row=1, column=0, sticky="e", pady=10, padx=10)
-        self.password_entry = tk.Entry(form_container, font=("Arial", 12), width=30, show="*", relief="solid", borderwidth=1)
+        tk.Label(form_container, text="Password:", font=label_font, 
+                 bg="#0B132B", fg="#FFFFFF").grid(row=1, column=0, sticky="e", pady=10, padx=10)
+        
+        # Entry background: Dark Navy
+        self.password_entry = tk.Entry(form_container, font=("Arial", 12), width=30, show="*", 
+                                       relief="solid", borderwidth=1, 
+                                       bg="#1C2541", fg="#FFFFFF", insertbackground="#FFFFFF")
         self.password_entry.grid(row=1, column=1, pady=10)
 
         tk.Checkbutton(form_container, text="Show Password", variable=self.var_show_pass, 
-                       bg="white", font=("Arial", 10), command=self.toggle_password).grid(row=2, column=1, sticky="w")
+                       bg="#0B132B", fg="#FFFFFF", font=("Arial", 10), 
+                       selectcolor="#1C2541", activebackground="#0B132B", 
+                       activeforeground="#FFFFFF", command=self.toggle_password).grid(row=2, column=1, sticky="w")
 
 
         # --- BUTTON SECTION ---
-        btn_frame = tk.Frame(self, bg="white")
+        btn_frame = tk.Frame(self, bg="#0B132B")
         btn_frame.pack(side="bottom", pady=50)
 
-        # THE "LOGOUT STYLE" BUTTON CONFIGURATION
+        # THE NEW COLOR PALETTE STYLE
         dark_btn_style = {
             "font": ("Arial", 11, "bold"),
-            "bg": "#333",       # Dark Charcoal
-            "fg": "white",      # White Text
-            "relief": "flat",   # Clean flat look
-            "activebackground": "#555", # Slight highlight when clicked
+            "bg": "#3A506B",     # Steel Blue
+            "fg": "white",       # White Text
+            "relief": "flat",    # Clean flat look
+            "activebackground": "#1C2541", # Darker navy when clicked
             "activeforeground": "white",
             "width": 18,
             "height": 2
@@ -192,17 +208,21 @@ class SignUpPage(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent)
         self.controller = controller
-        self.configure(bg="white")
+        # Main background: Deepest Navy
+        self.configure(bg="#0B132B")
 
         # --- HEADER SECTION ---
-        header_frame = tk.Frame(self, bg="white")
+        header_frame = tk.Frame(self, bg="#0B132B")
         header_frame.pack(fill="x", padx=20, pady=(20, 10))
 
-        tk.Label(header_frame, text="SIGN UP", font=("Arial", 24, "bold"), bg="white").pack()
-        tk.Frame(self, height=2, bg="black").pack(fill="x", padx=20, pady=(0, 40))
+        tk.Label(header_frame, text="SIGN UP", font=("Arial", 24, "bold"), 
+                 bg="#0B132B", fg="#FFFFFF").pack()
+        
+        # Divider line: Steel Blue accent
+        tk.Frame(self, height=2, bg="#3A506B").pack(fill="x", padx=20, pady=(0, 40))
 
         # --- FORM SECTION ---
-        form_container = tk.Frame(self, bg="white")
+        form_container = tk.Frame(self, bg="#0B132B")
         form_container.pack(expand=True)
 
         self.entries = {}
@@ -212,27 +232,35 @@ class SignUpPage(tk.Frame):
         self.var_show_pass = tk.BooleanVar(value=False)
 
         for i, (label_text, key_name) in enumerate(fields):
-            tk.Label(form_container, text=label_text, font=("Arial", 12), bg="white").grid(row=i, column=0, sticky="e", pady=8, padx=10)
+            tk.Label(form_container, text=label_text, font=("Arial", 12), 
+                     bg="#0B132B", fg="#FFFFFF").grid(row=i, column=0, sticky="e", pady=8, padx=10)
             
             show_char = "*" if "Password" in label_text else None
-            entry_widget = tk.Entry(form_container, font=("Arial", 12), width=30, show=show_char, relief="solid", borderwidth=1)
+            # Entry background: Dark Navy
+            entry_widget = tk.Entry(form_container, font=("Arial", 12), width=30, show=show_char, 
+                                    relief="solid", borderwidth=1, 
+                                    bg="#1C2541", fg="#FFFFFF", insertbackground="#FFFFFF")
             entry_widget.grid(row=i, column=1, pady=8)
             self.entries[key_name] = entry_widget 
 
         tk.Checkbutton(form_container, text="Show Password", variable=self.var_show_pass, 
-                       bg="white", font=("Arial", 10), command=self.toggle_password).grid(row=len(fields), column=1, sticky="w")
+                       bg="#0B132B", fg="#FFFFFF", font=("Arial", 10), 
+                       selectcolor="#1C2541", activebackground="#0B132B", 
+                       activeforeground="#FFFFFF", command=self.toggle_password).grid(row=len(fields), column=1, sticky="w")
 
 
-       # --- BUTTON SECTION ---
-        btn_frame = tk.Frame(self, bg="white")
+        # --- BUTTON SECTION ---
+        btn_frame = tk.Frame(self, bg="#0B132B")
         btn_frame.pack(side="bottom", pady=50)
 
-        # REUSING THE DARK STYLE
+        # THE NEW COLOR PALETTE STYLE
         dark_btn_style = {
             "font": ("Arial", 11, "bold"),
-            "bg": "#333",
-            "fg": "white",
-            "relief": "flat",
+            "bg": "#3A506B",     # Steel Blue
+            "fg": "white",       # White Text
+            "relief": "flat",    # Clean flat look
+            "activebackground": "#1C2541", # Dark Navy on click
+            "activeforeground": "white",
             "width": 18,
             "height": 2
         }
@@ -265,24 +293,25 @@ class DashboardPage(tk.Frame):
     def __init__(self, parent, controller):
             super().__init__(parent)
             self.controller = controller
-            self.configure(bg="white") # Set background to white
+            # Main Background
+            self.configure(bg="#0B132B") 
 
-            # --- HEADER SECTION (New Style) ---
-            header_frame = tk.Frame(self, bg="white")
+            # --- HEADER SECTION ---
+            header_frame = tk.Frame(self, bg="#0B132B")
             header_frame.pack(fill="x", padx=20, pady=(20, 10))
 
-            # Bold, centered Title matching Budget Overview
-            tk.Label(header_frame, text="DASHBOARD", font=("Arial", 28, "bold"), bg="white").pack()
+            tk.Label(header_frame, text="DASHBOARD", font=("Arial", 28, "bold"), 
+                     bg="#0B132B", fg="#FFFFFF").pack()
             
-            # The Signature Black Divider Line
-            tk.Frame(self, height=2, bg="black").pack(fill="x", padx=20, pady=(0, 20))
+            # The Signature Divider Line (Steel Blue Accent)
+            tk.Frame(self, height=2, bg="#3A506B").pack(fill="x", padx=20, pady=(0, 20))
 
             # Main Layout Container
-            main_container = tk.Frame(self, bg="white")
+            main_container = tk.Frame(self, bg="#0B132B")
             main_container.pack(fill="both", expand=True, padx=20)
 
             # --- LEFT SIDE: NAVIGATION BUTTONS ---
-            nav_frame = tk.Frame(main_container, bg="white")
+            nav_frame = tk.Frame(main_container, bg="#0B132B")
             nav_frame.pack(side="left", fill="y", padx=(0, 30))
 
             btns = [
@@ -292,182 +321,150 @@ class DashboardPage(tk.Frame):
                 ("BUDGET OVERVIEW", "BudgetOverviewPage")
             ]
 
-            for text, page in btns:
-                tk.Button(nav_frame, text=text, width=25, height=2, font=("Arial", 11, "bold"),
-                        command=lambda p=page: controller.show_frame(p)).pack(pady=10)
+            # Navigation Button Style
+            nav_btn_style = {
+                "width": 25,
+                "height": 2,
+                "font": ("Arial", 11, "bold"),
+                "bg": "#3A506B",    # Steel Blue
+                "fg": "white",      # White Text
+                "relief": "flat",
+                "activebackground": "#1C2541",
+                "activeforeground": "white"
+            }
 
+            for text, page in btns:
+                tk.Button(nav_frame, text=text, command=lambda p=page: controller.show_frame(p), 
+                          **nav_btn_style).pack(pady=10)
+
+            # Logout Button (Using Darker Navy for contrast)
             tk.Button(nav_frame, text="LOGOUT", width=25, height=2, font=("Arial", 11, "bold"),
-                    bg="#333", fg="white", command=lambda: controller.show_frame("LoginPage")).pack(pady=20)
+                    bg="#1C2541", fg="white", relief="flat",
+                    command=lambda: controller.show_frame("LoginPage")).pack(pady=20)
 
             # --- RIGHT SIDE: MINI PROFILE ---
-            profile_frame = tk.LabelFrame(main_container, text="Profile", bg="white", font=("Arial", 12, "bold" ), padx=20, pady=20)
+            # Card background: Dark Navy
+            profile_frame = tk.LabelFrame(main_container, text="Profile", bg="#1C2541", 
+                                          fg="#FFFFFF", font=("Arial", 12, "bold"), padx=20, pady=20)
             profile_frame.pack(side="right", fill="both", expand=True)
 
             # Top section: Image and Username/Date/Goal
-            top_row = tk.Frame(profile_frame, bg="white")
+            top_row = tk.Frame(profile_frame, bg="#1C2541")
             top_row.pack(fill="x")
 
-            # Profile Image Slot
-            # Inside your DashboardPage __init__
-            self.img_label = tk.Label(top_row, bg="white", relief="solid", borderwidth=1)
+            # Profile Image Slot (Deep Background)
+            self.img_label = tk.Label(top_row, bg="#0B132B", relief="solid", borderwidth=1)
             self.img_label.grid(row=0, column=0, rowspan=4, padx=(0, 20), sticky="nsew")
 
-            # Create a "blank" square image to hold the space if no photo is uploaded yet
-            placeholder = Image.new('RGB', (150, 150), color = '#ddd')
+            placeholder = Image.new('RGB', (150, 150), color = '#0B132B')
             self.ph_img = ImageTk.PhotoImage(placeholder)
             self.img_label.config(image=self.ph_img)
-
 
             # Identity Variables
             self.username_var = tk.StringVar(value="username")
             self.date_var = tk.StringVar(value=date.today().strftime("%m/%d/%Y"))
             self.goal_var = tk.StringVar(value="Budget Goal: ₱0.00")
 
-            # row=0: Username (No box)
             tk.Label(top_row, textvariable=self.username_var, font=("Arial", 12, "bold"), 
-                    anchor="w", bg="white").grid(row=0, column=1, pady=2, padx=10, sticky="w")
+                    anchor="w", bg="#1C2541", fg="#FFFFFF").grid(row=0, column=1, pady=2, padx=10, sticky="w")
             
-            # row=1: Date (No box)
             tk.Label(top_row, textvariable=self.date_var, font=("Arial", 10), 
-                    fg="gray", anchor="w", bg="white").grid(row=1, column=1, pady=2, padx=10, sticky="w")
+                    fg="#bdbdbd", anchor="w", bg="#1C2541").grid(row=1, column=1, pady=2, padx=10, sticky="w")
             
-            # row=2: Budget Goal Input Section
-            goal_input_frame = tk.Frame(top_row, bg="white")
+            # Budget Goal Input Section
+            goal_input_frame = tk.Frame(top_row, bg="#1C2541")
             goal_input_frame.grid(row=2, column=1, pady=5, padx=10, sticky="w")
 
-            tk.Label(goal_input_frame, text="Budget Goal: ₱", font=("Arial", 10), bg="white").pack(side="left")
+            tk.Label(goal_input_frame, text="Budget Goal: ₱", font=("Arial", 10), 
+                     bg="#1C2541", fg="#FFFFFF").pack(side="left")
             
-            # This is where the user types the number
-            self.goal_entry = tk.Entry(goal_input_frame, width=15, font=("Arial", 10))
+            # Entry Style: Deep background
+            self.goal_entry = tk.Entry(goal_input_frame, width=15, font=("Arial", 10),
+                                       bg="#0B132B", fg="white", insertbackground="white")
             self.goal_entry.pack(side="left", padx=2)
 
-            # Small button to save the goal to the database
             tk.Button(goal_input_frame, text="Set", font=("Arial", 8, "bold"), 
-                  bg="#2196F3", fg="white", command=self.save_goal).pack(side="left", padx=5)
+                  bg="#3A506B", fg="white", relief="flat", command=self.save_goal).pack(side="left", padx=5)
             
-            # row=3: Upload Button
-            tk.Button(top_row, text="Upload Photo", font=("Arial", 8), 
-                    command=self.upload_photo).grid(row=3, column=1, pady=5, padx=10, sticky="w")
+            tk.Button(top_row, text="Upload Photo", font=("Arial", 8), bg="#3A506B", 
+                    fg="white", relief="flat", command=self.upload_photo).grid(row=3, column=1, pady=5, padx=10, sticky="w")
 
 
             # --- BOTTOM SECTION: FINANCIAL STATS ---
-            stats_frame = tk.Frame(profile_frame, bg="white")
+            stats_frame = tk.Frame(profile_frame, bg="#1C2541")
             stats_frame.pack(fill="x", pady=20, anchor="w")
 
             self.expense_var = tk.StringVar(value="Total Expenses: ₱0.00")
-            # Changed the label text here to "Current Savings"
             self.savings_var = tk.StringVar(value="Current Savings: ₱0.00")
 
-            tk.Label(stats_frame, textvariable=self.expense_var, bg="#ccc", 
+            # Stat Bar Style (Using Steel Blue for prominence)
+            tk.Label(stats_frame, textvariable=self.expense_var, bg="#3A506B", fg="#FFFFFF",
                     width=45, anchor="w", padx=10, font=("Arial", 10, "bold")).pack(pady=5, anchor="w")           
-            tk.Label(stats_frame, textvariable=self.savings_var, bg="#ccc", 
+            tk.Label(stats_frame, textvariable=self.savings_var, bg="#3A506B", fg="#FFFFFF",
                     width=45, anchor="w", padx=10, font=("Arial", 10, "bold")).pack(pady=5, anchor="w")
 
-    #fpr dashboard profile picture upload
     def upload_photo(self):
-        """Allows user to pick an image and saves the path to the DB."""
-        # This now works because of the updated import
         file_path = filedialog.askopenfilename(filetypes=[("Image Files", "*.png *.jpg *.jpeg")])
-        
         if file_path:
             u_id = self.controller.current_user_id
             try:
-                # Using 'connection' as requested
                 with sqlite3.connect("cashatan.db") as connection:
                     connection.execute("UPDATE users SET profile_pic = ? WHERE user_id = ?", (file_path, u_id))
                     connection.commit()
-                
                 messagebox.showinfo("Success", "Profile picture updated!")
-                self.load_data() # Refresh to show the new image
+                self.load_data() 
             except sqlite3.Error as e:
                 messagebox.showerror("Database Error", f"Could not save image path: {e}")
 
     def load_data(self):
-        """Fetches profile info and actual financial totals from the ledger."""
         u_id = getattr(self.controller, 'current_user_id', None)
         if u_id is None: return
-
         try:
             with sqlite3.connect("cashatan.db") as connection:
                 cursor = connection.cursor()
-                
-                # 1. Load Profile Details
                 cursor.execute("SELECT username, profile_pic FROM users WHERE user_id = ?", (u_id,))
                 user_info = cursor.fetchone()
-                
                 if user_info:
                     self.username_var.set(user_info[0])
-                    # Only try to load a custom photo if the path exists
                     if user_info[1]: 
                         try:
                             img = Image.open(user_info[1])
                             img = img.resize((150, 150), Image.Resampling.LANCZOS)
                             photo = ImageTk.PhotoImage(img)
                             self.img_label.config(image=photo)
-                            self.img_label.image = photo # Update reference to the new photo
-                        except Exception:
-                            # If file is missing, keep the placeholder
-                            pass
-
-                # 2. Get Budget Goal (Show it in the entry box)
+                            self.img_label.image = photo 
+                        except Exception: pass
                 cursor.execute("SELECT savings_goal FROM budgets WHERE user_id = ?", (u_id,))
                 goal_result = cursor.fetchone()
                 self.goal_entry.delete(0, tk.END)
-                if goal_result:
-                    self.goal_entry.insert(0, f"{goal_result[0]:.2f}")
-                else:
-                    self.goal_entry.insert(0, "0.00")
-
-                # 3. ACTUAL MONEY LOGIC (Total Income - Total Expense)
-                # We ignore the 'monthly_income' field from the budgets table here.
+                if goal_result: self.goal_entry.insert(0, f"{goal_result[0]:.2f}")
+                else: self.goal_entry.insert(0, "0.00")
                 cursor.execute("SELECT type, SUM(amount) FROM transactions WHERE user_id = ? GROUP BY type", (u_id,))
                 totals = dict(cursor.fetchall())
-                
                 actual_income = totals.get('Income', 0.0)
                 actual_expense = totals.get('Expense', 0.0)
-                
-                # Current Savings is only what you actually have.
                 current_savings = actual_income - actual_expense
-
                 self.expense_var.set(f"Total Expenses: ₱{actual_expense:,.2f}")
                 self.savings_var.set(f"Current Savings: ₱{current_savings:,.2f}")
-
-        except Exception as e:
-            print(f"Error loading dashboard: {e}")
-        
+        except Exception as e: print(f"Error loading dashboard: {e}")
         
     def save_goal(self):
-        """Saves the typed budget goal into the budgets table."""
-        # 1. Get the current user ID and the typed goal
         u_id = getattr(self.controller, 'current_user_id', None)
         new_goal = self.goal_entry.get()
-
         if not u_id:
             messagebox.showerror("Error", "User not found. Please log in again.")
             return
-
         try:
-            # 2. Convert the input to a number
             goal_value = float(new_goal)
-            
-            # 3. Save to database using your 'connection' naming
             with sqlite3.connect("cashatan.db") as connection:
                 cursor = connection.cursor()
-                
-                # This SQL command updates the goal if the user_id exists, 
-                # or creates a new row if it doesn't.
                 query = """INSERT INTO budgets (user_id, savings_goal) 
                            VALUES (?, ?) 
                            ON CONFLICT(user_id) DO UPDATE SET savings_goal = excluded.savings_goal"""
-                
                 cursor.execute(query, (u_id, goal_value))
                 connection.commit()
-            
             messagebox.showinfo("Success", f"Budget Goal set to ₱{goal_value:,.2f}")
-            
-            # 4. Refresh the dashboard so all numbers update
             self.load_data()
-
         except ValueError:
             messagebox.showerror("Invalid Input", "Please enter a valid number for your goal.")
         except sqlite3.Error as e:
@@ -478,17 +475,21 @@ class AddExpensePage(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent)
         self.controller = controller
-        self.configure(bg="white")
+        # Main background: Deepest Navy
+        self.configure(bg="#0B132B")
 
         # --- HEADER SECTION ---
-        header_frame = tk.Frame(self, bg="white")
+        header_frame = tk.Frame(self, bg="#0B132B")
         header_frame.pack(fill="x", padx=20, pady=(20, 10))
 
-        tk.Label(header_frame, text="ADD EXPENSE", font=("Arial", 24, "bold"), bg="white").pack()
-        tk.Frame(self, height=2, bg="black").pack(fill="x", padx=20, pady=(0, 40))
+        tk.Label(header_frame, text="ADD EXPENSE", font=("Arial", 24, "bold"), 
+                 bg="#0B132B", fg="white").pack()
+        
+        # Divider line: Steel Blue accent
+        tk.Frame(self, height=2, bg="#3A506B").pack(fill="x", padx=20, pady=(0, 40))
 
         # --- FORM CONTAINER ---
-        form_container = tk.Frame(self, bg="white")
+        form_container = tk.Frame(self, bg="#0B132B")
         form_container.pack(expand=True)
 
         fields = ["Date:", "Category:", "Amount:", "Notes:"]
@@ -498,36 +499,42 @@ class AddExpensePage(tk.Frame):
         label_font = ("Arial", 12, "bold")
 
         for i, field in enumerate(fields):
-            tk.Label(form_container, text=field, font=label_font, bg="white").grid(row=i, column=0, padx=10, pady=10, sticky="e")
+            tk.Label(form_container, text=field, font=label_font, 
+                     bg="#0B132B", fg="white").grid(row=i, column=0, padx=10, pady=10, sticky="e")
             
             if field == "Date:":
-                entry = DateEntry(form_container, width=28, font=("Arial", 12), background='black', 
-                                  foreground='white', borderwidth=1, relief="solid", date_pattern='y-mm-dd')
+                # DateEntry using Steel Blue for the header
+                entry = DateEntry(form_container, width=28, font=("Arial", 12), 
+                                  background='#3A506B', foreground='white', 
+                                  borderwidth=1, relief="solid", date_pattern='y-mm-dd')
             
             elif field == "Category:":
-                entry = ttk.Combobox(form_container, values=categories, width=28, font=("Arial", 12), state="readonly")
+                entry = ttk.Combobox(form_container, values=categories, width=28, 
+                                     font=("Arial", 12), state="readonly")
                 entry.set("Select Category") 
             
             else:
-                entry = tk.Entry(form_container, font=("Arial", 12), width=30, relief="solid", borderwidth=1)
+                # Entry using Dark Navy background
+                entry = tk.Entry(form_container, font=("Arial", 12), width=30, 
+                                 bg="#1C2541", fg="white", relief="solid", 
+                                 borderwidth=1, insertbackground="white")
             
             entry.grid(row=i, column=1, padx=10, pady=10, sticky="w")
             self.entries[field] = entry
 
-        # --- FOOTER BUTTONS (Centered and Closer) ---
-        btn_frame = tk.Frame(self, bg="white")
-        btn_frame.pack(side="bottom", pady=30) # Removed fill="x" to allow centering
+        # --- FOOTER BUTTONS ---
+        btn_frame = tk.Frame(self, bg="#0B132B")
+        btn_frame.pack(side="bottom", pady=30)
 
         dark_btn_style = {
             "font": ("Arial", 11, "bold"),
-            "bg": "#333",
+            "bg": "#3A506B",     # Steel Blue
             "fg": "white",
             "relief": "flat",
             "height": 2,
-            "width": 20 # Slightly narrower for better grouping
+            "width": 20
         }
 
-        # Removed expand=True to bring them closer
         tk.Button(btn_frame, text="SAVE EXPENSE", command=self.save_to_db, **dark_btn_style).pack(side="left", padx=10)
         tk.Button(btn_frame, text="BACK TO DASHBOARD", command=lambda: controller.show_frame("DashboardPage"), **dark_btn_style).pack(side="left", padx=10)
 
@@ -542,7 +549,6 @@ class AddExpensePage(tk.Frame):
             messagebox.showerror("Error", "No user logged in!")
             return
 
-        # REQUIRED FIELD VALIDATION
         if category == "Select Category":
             messagebox.showwarning("Selection Required", "Please select a valid Category.")
             return
@@ -569,22 +575,25 @@ class AddExpensePage(tk.Frame):
                 widget.set("Select Category")
             elif field != "Date:":
                 widget.delete(0, tk.END)
-
 class AddIncomePage(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent)
         self.controller = controller
-        self.configure(bg="white")
+        # Main background: Deepest Navy
+        self.configure(bg="#0B132B")
 
         # --- HEADER SECTION ---
-        header_frame = tk.Frame(self, bg="white")
+        header_frame = tk.Frame(self, bg="#0B132B")
         header_frame.pack(fill="x", padx=20, pady=(20, 10))
 
-        tk.Label(header_frame, text="ADD INCOME", font=("Arial", 24, "bold"), bg="white").pack()
-        tk.Frame(self, height=2, bg="black").pack(fill="x", padx=20, pady=(0, 40))
+        tk.Label(header_frame, text="ADD INCOME", font=("Arial", 24, "bold"), 
+                 bg="#0B132B", fg="white").pack()
+        
+        # Divider line: Steel Blue accent
+        tk.Frame(self, height=2, bg="#3A506B").pack(fill="x", padx=20, pady=(0, 40))
 
         # --- FORM CONTAINER ---
-        form_container = tk.Frame(self, bg="white")
+        form_container = tk.Frame(self, bg="#0B132B")
         form_container.pack(expand=True)
 
         fields = ["Date:", "Source:", "Amount:", "Notes:"]
@@ -594,36 +603,40 @@ class AddIncomePage(tk.Frame):
         label_font = ("Arial", 12, "bold")
 
         for i, field in enumerate(fields):
-            tk.Label(form_container, text=field, font=label_font, bg="white").grid(row=i, column=0, padx=10, pady=10, sticky="e")
+            tk.Label(form_container, text=field, font=label_font, 
+                     bg="#0B132B", fg="white").grid(row=i, column=0, padx=10, pady=10, sticky="e")
             
             if field == "Date:":
-                entry = DateEntry(form_container, width=28, font=("Arial", 12), background='black', 
-                                  foreground='white', borderwidth=1, relief="solid", date_pattern='y-mm-dd')
+                entry = DateEntry(form_container, width=28, font=("Arial", 12), 
+                                  background='#3A506B', foreground='white', 
+                                  borderwidth=1, relief="solid", date_pattern='y-mm-dd')
             
             elif field == "Source:":
-                entry = ttk.Combobox(form_container, values=income_sources, width=28, font=("Arial", 12), state="readonly")
+                entry = ttk.Combobox(form_container, values=income_sources, width=28, 
+                                     font=("Arial", 12), state="readonly")
                 entry.set("Select Source")
             
             else:
-                entry = tk.Entry(form_container, font=("Arial", 12), width=30, relief="solid", borderwidth=1)
+                entry = tk.Entry(form_container, font=("Arial", 12), width=30, 
+                                 bg="#1C2541", fg="white", relief="solid", 
+                                 borderwidth=1, insertbackground="white")
             
             entry.grid(row=i, column=1, padx=10, pady=10, sticky="w")
             self.entries[field] = entry
 
-        # --- FOOTER BUTTONS (Centered and Closer) ---
-        btn_frame = tk.Frame(self, bg="white")
+        # --- FOOTER BUTTONS ---
+        btn_frame = tk.Frame(self, bg="#0B132B")
         btn_frame.pack(side="bottom", pady=30) 
 
         dark_btn_style = {
             "font": ("Arial", 11, "bold"),
-            "bg": "#333",
+            "bg": "#3A506B",     # Steel Blue
             "fg": "white",
             "relief": "flat",
             "height": 2,
             "width": 20
         }
 
-        # Removed expand=True to bring them closer
         tk.Button(btn_frame, text="SAVE INCOME", command=self.save_income_to_db, **dark_btn_style).pack(side="left", padx=10)
         tk.Button(btn_frame, text="BACK TO DASHBOARD", command=lambda: controller.show_frame("DashboardPage"), **dark_btn_style).pack(side="left", padx=10)
 
@@ -638,7 +651,6 @@ class AddIncomePage(tk.Frame):
             messagebox.showerror("Error", "No user logged in!")
             return
 
-        # REQUIRED FIELD VALIDATION
         if source == "Select Source":
             messagebox.showwarning("Selection Required", "Please select a valid Income Source.")
             return
@@ -671,36 +683,40 @@ class ViewTransactionsPage(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent)
         self.controller = controller
-        self.config(bg="white") 
+        # Background: Deepest Navy
+        self.config(bg="#0B132B") 
         
-        # Header
+        # Header - bg matches frame, fg is white
         tk.Label(self, text="VIEW TRANSACTIONS", font=("Arial", 26, "bold"), 
-                 bg="white", fg="black").pack(pady=(20, 10))
-        tk.Frame(self, height=2, bg="black").pack(fill="x", padx=20)
+                 bg="#0B132B", fg="white").pack(pady=(20, 10))
         
-        # --- UI UPDATED: FORCED GRID LINES & COLORS ---
+        # Divider Line: Steel Blue Accent
+        tk.Frame(self, height=2, bg="#3A506B").pack(fill="x", padx=20)
+
+        # --- UI STYLE: DARK THEME TREEVIEW ---
         style = ttk.Style()
         style.theme_use("clam") 
         
-        # Header style with borders
+        # Header style: Steel Blue background
         style.configure("Treeview.Heading", font=("Arial", 12, "bold"), 
-                        background="#d9d9d9", foreground="black", 
+                        background="#3A506B", foreground="white", 
                         borderwidth=1, relief="solid")
         
-        # Row style with visible grid lines
+        # Row style: Darker Navy backgrounds with White text
         style.configure("Treeview", font=("Arial", 11), rowheight=35, 
-                        background="white", fieldbackground="white", 
-                        borderwidth=1, relief="solid")
+                        background="#1C2541", fieldbackground="#1C2541", 
+                        foreground="white", borderwidth=1, relief="solid")
         
-        style.map("Treeview", background=[('selected', '#bcbcbc')])
+        # Selection color
+        style.map("Treeview", background=[('selected', '#3A506B')])
 
         # 1. Table Setup
         cols = ("ID", "Type", "Date", "Category", "Amount", "Notes")
         self.tree = ttk.Treeview(self, columns=cols, show="headings", style="Treeview")
         
-        # Alternating row colors (Zebra stripes)
-        self.tree.tag_configure('oddrow', background="white")
-        self.tree.tag_configure('evenrow', background="#f2f2f2") 
+        # Zebra stripes using the two dark navy shades
+        self.tree.tag_configure('oddrow', background="#1C2541")
+        self.tree.tag_configure('evenrow', background="#0B132B") 
 
         # Define Headings
         self.tree.heading("ID", text="ID")
@@ -721,16 +737,17 @@ class ViewTransactionsPage(tk.Frame):
         self.tree.pack(fill="both", expand=True, padx=30, pady=10)
         
         # --- FOOTER BUTTONS ---
-        btn_frame = tk.Frame(self, bg="white")
+        btn_frame = tk.Frame(self, bg="#0B132B")
         btn_frame.pack(pady=30)
         
+        # Buttons use Steel Blue (#3A506B)
         btn_style = {
             "font": ("Arial", 11, "bold"),
-            "bg": "#333",       
+            "bg": "#3A506B",      
             "fg": "white",         
             "relief": "solid",     
-            "borderwidth": 1,
-            "activebackground": "#555",
+            "borderwidth": 0,
+            "activebackground": "#1C2541",
             "activeforeground": "white", 
             "height": 2
         }
@@ -792,40 +809,39 @@ class ViewTransactionsPage(tk.Frame):
         edit_win = tk.Toplevel(self)
         edit_win.title("Edit Transaction")
         edit_win.geometry("400x450")
-        edit_win.config(bg="white")
+        # Popup Background: Deepest Navy
+        edit_win.config(bg="#0B132B")
 
         tk.Label(edit_win, text=f"EDITING {t_type.upper()}", font=("Arial", 14, "bold"), 
-                 bg="white").pack(pady=20)
+                 bg="#0B132B", fg="white").pack(pady=20)
 
-        fields_frame = tk.Frame(edit_win, bg="white")
+        fields_frame = tk.Frame(edit_win, bg="#0B132B")
         fields_frame.pack(pady=10)
 
         label_font = ("Arial", 10, "bold")
 
         # Date Field
-        tk.Label(fields_frame, text="Date:", bg="white", font=label_font).grid(row=0, column=0, pady=8, padx=5, sticky="e")
-        ent_date = DateEntry(fields_frame, width=20, date_pattern='y-mm-dd')
+        tk.Label(fields_frame, text="Date:", bg="#0B132B", fg="white", font=label_font).grid(row=0, column=0, pady=8, padx=5, sticky="e")
+        ent_date = DateEntry(fields_frame, width=20, date_pattern='y-mm-dd', background="#3A506B")
         ent_date.set_date(t_date) 
         ent_date.grid(row=0, column=1, pady=8)
 
-        # UPDATED: Category Field now uses a Combobox
-        tk.Label(fields_frame, text="Category/Source:", bg="white", font=label_font).grid(row=1, column=0, pady=8, padx=5, sticky="e")
-        
-        # Define your category list here
+        # Category Field
+        tk.Label(fields_frame, text="Category/Source:", bg="#0B132B", fg="white", font=label_font).grid(row=1, column=0, pady=8, padx=5, sticky="e")
         categories = ["Food", "Transport", "Bills", "Allowance", "Groceries", "Salary", "Others"]
         ent_cat = ttk.Combobox(fields_frame, values=categories, width=21, state="readonly")
-        ent_cat.set(t_cat) # Pre-fill with existing category
+        ent_cat.set(t_cat) 
         ent_cat.grid(row=1, column=1, pady=8)
 
-        # Amount Field
-        tk.Label(fields_frame, text="Amount:", bg="white", font=label_font).grid(row=2, column=0, pady=8, padx=5, sticky="e")
-        ent_amt = tk.Entry(fields_frame, width=23, relief="solid")
+        # Amount Field - Entry bg matches the darkest navy
+        tk.Label(fields_frame, text="Amount:", bg="#0B132B", fg="white", font=label_font).grid(row=2, column=0, pady=8, padx=5, sticky="e")
+        ent_amt = tk.Entry(fields_frame, width=23, relief="solid", bg="#1C2541", fg="white", insertbackground="white")
         ent_amt.insert(0, t_amt) 
         ent_amt.grid(row=2, column=1, pady=8)
 
         # Notes Field
-        tk.Label(fields_frame, text="Notes:", bg="white", font=label_font).grid(row=3, column=0, pady=8, padx=5, sticky="e")
-        ent_notes = tk.Entry(fields_frame, width=23, relief="solid")
+        tk.Label(fields_frame, text="Notes:", bg="#0B132B", fg="white", font=label_font).grid(row=3, column=0, pady=8, padx=5, sticky="e")
+        ent_notes = tk.Entry(fields_frame, width=23, relief="solid", bg="#1C2541", fg="white", insertbackground="white")
         ent_notes.insert(0, t_notes) 
         ent_notes.grid(row=3, column=1, pady=8)
 
@@ -847,148 +863,137 @@ class ViewTransactionsPage(tk.Frame):
                 messagebox.showerror("Error", "Amount must be a number.")
 
         tk.Button(edit_win, text="SAVE CHANGES", width=20, 
-                  font=("Arial", 11, "bold"), bg="#d9d9d9", relief="solid", 
-                  borderwidth=1, command=save_changes).pack(pady=30)
+                  font=("Arial", 11, "bold"), bg="#3A506B", fg="white", 
+                  relief="flat", command=save_changes).pack(pady=30)
 
 # --- 6. SUMMARY TEMPLATE (BUDGET OVERVIEW) [cite: 143] ---
 class BudgetOverviewPage(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent)
         self.controller = controller
-        self.config(bg="white")
+        # Main background: Deepest Navy
+        self.config(bg="#0B132B")
 
-        # --- HEADER SECTION (Keep as is) ---
-        header_frame = tk.Frame(self, bg="white")
+        # --- HEADER SECTION ---
+        header_frame = tk.Frame(self, bg="#0B132B")
         header_frame.pack(fill="x", padx=20, pady=10)
 
-        user_info = tk.Frame(header_frame, bg="white")
+        user_info = tk.Frame(header_frame, bg="#0B132B")
         user_info.pack(side="left")
         
-        self.canvas_user = tk.Canvas(user_info, width=40, height=40, bg="white", highlightthickness=0)
+        self.canvas_user = tk.Canvas(user_info, width=40, height=40, bg="#0B132B", highlightthickness=0)
         self.canvas_user.pack(side="left")
         
-        self.lbl_username = tk.Label(user_info, text="username", font=("Arial", 14), bg="white")
+        self.lbl_username = tk.Label(user_info, text="username", font=("Arial", 14), bg="#0B132B", fg="white")
         self.lbl_username.pack(side="left", padx=10)
 
-        tk.Label(header_frame, text="BUDGET OVERVIEW", font=("Arial", 28, "bold"), bg="white").place(relx=0.5, anchor="n")
-        tk.Label(header_frame, text=date.today().strftime("%m/%d/%Y"), font=("Arial", 14), bg="white").pack(side="right")
+        tk.Label(header_frame, text="BUDGET OVERVIEW", font=("Arial", 28, "bold"), bg="#0B132B", fg="white").place(relx=0.5, anchor="n")
+        tk.Label(header_frame, text=date.today().strftime("%m/%d/%Y"), font=("Arial", 14), bg="#0B132B", fg="white").pack(side="right")
 
-        tk.Frame(self, height=2, bg="black").pack(fill="x", padx=20)
+        # Accent Divider Line
+        tk.Frame(self, height=2, bg="#3A506B").pack(fill="x", padx=20)
 
         # --- MAIN CONTENT AREA ---
-        content_frame = tk.Frame(self, bg="white")
+        content_frame = tk.Frame(self, bg="#0B132B")
         content_frame.pack(fill="both", expand=True, padx=20, pady=10)
         content_frame.columnconfigure(0, weight=1)
         content_frame.columnconfigure(1, weight=1)
 
-        # BOXES (Stats, Summary, Progress)
-        stats_box = tk.Frame(content_frame, bg="#d9d9d9", padx=15, pady=15, relief="solid", borderwidth=1)
+        # BOXES (Stats, Summary, Progress) - Using Dark Navy (#1C2541)
+        stats_box = tk.Frame(content_frame, bg="#1C2541", padx=15, pady=15, relief="solid", borderwidth=1)
         stats_box.grid(row=0, column=0, sticky="nsew", padx=(0, 10), pady=(0, 10))
         
-        self.lbl_monthly_inc = tk.Label(stats_box, text="Monthly Income: ₱0", font=("Arial", 11, "bold"), bg="white", relief="solid", borderwidth=1, anchor="w", padx=5)
+        self.lbl_monthly_inc = tk.Label(stats_box, text="Monthly Income: ₱0", font=("Arial", 11, "bold"), bg="#0B132B", fg="white", relief="solid", borderwidth=1, anchor="w", padx=5)
         self.lbl_monthly_inc.pack(fill="x", pady=2)
-        self.lbl_savings_goal = tk.Label(stats_box, text="Savings Goal: ₱0", font=("Arial", 11, "bold"), bg="white", relief="solid", borderwidth=1, anchor="w", padx=5)
+        self.lbl_savings_goal = tk.Label(stats_box, text="Savings Goal: ₱0", font=("Arial", 11, "bold"), bg="#0B132B", fg="white", relief="solid", borderwidth=1, anchor="w", padx=5)
         self.lbl_savings_goal.pack(fill="x", pady=2)
-        self.lbl_avail_exp = tk.Label(stats_box, text="Available for Expenses: ₱0", font=("Arial", 11, "bold"), bg="#b3b3b3", relief="solid", borderwidth=1, anchor="w", padx=5)
+        self.lbl_avail_exp = tk.Label(stats_box, text="Available for Expenses: ₱0", font=("Arial", 11, "bold"), bg="#3A506B", fg="white", relief="solid", borderwidth=1, anchor="w", padx=5)
         self.lbl_avail_exp.pack(fill="x", pady=2)
 
-        top_right_container = tk.Frame(content_frame, bg="white")
+        top_right_container = tk.Frame(content_frame, bg="#0B132B")
         top_right_container.grid(row=0, column=1, sticky="nsew", pady=(0, 10))
         top_right_container.columnconfigure(0, weight=1)
         top_right_container.columnconfigure(1, weight=1)
 
-        summary_box = tk.Frame(top_right_container, bg="white", relief="solid", borderwidth=1, padx=10, pady=5)
+        summary_box = tk.Frame(top_right_container, bg="#1C2541", relief="solid", borderwidth=1, padx=10, pady=5)
         summary_box.grid(row=0, column=0, sticky="nsew", padx=(0, 5))
-        tk.Label(summary_box, text="Expense Summary", font=("Arial", 11, "bold"), bg="#d9d9d9", relief="solid", borderwidth=1).pack(fill="x", pady=(0, 5))
-        self.lbl_total_exp = tk.Label(summary_box, text="Total Expenses: ₱0", bg="white", font=("Arial", 10, "bold"), anchor="w")
+        tk.Label(summary_box, text="Expense Summary", font=("Arial", 11, "bold"), bg="#3A506B", fg="white", relief="solid", borderwidth=1).pack(fill="x", pady=(0, 5))
+        self.lbl_total_exp = tk.Label(summary_box, text="Total Expenses: ₱0", bg="#1C2541", fg="white", font=("Arial", 10, "bold"), anchor="w")
         self.lbl_total_exp.pack(fill="x", pady=5)
-        self.lbl_remain_bud = tk.Label(summary_box, text="Remaining Budget: ₱0", bg="white", font=("Arial", 10, "bold"), anchor="w")
+        self.lbl_remain_bud = tk.Label(summary_box, text="Remaining Budget: ₱0", bg="#1C2541", fg="white", font=("Arial", 10, "bold"), anchor="w")
         self.lbl_remain_bud.pack(fill="x", pady=5)
 
-        progress_box = tk.Frame(top_right_container, bg="white", relief="solid", borderwidth=1, padx=10, pady=5)
+        progress_box = tk.Frame(top_right_container, bg="#1C2541", relief="solid", borderwidth=1, padx=10, pady=5)
         progress_box.grid(row=0, column=1, sticky="nsew", padx=(5, 0))
-        tk.Label(progress_box, text="Savings Progress", font=("Arial", 11, "bold"), bg="#d9d9d9", relief="solid", borderwidth=1).pack(fill="x", pady=(0, 5))
-        self.gauge_canvas = tk.Canvas(progress_box, width=80, height=80, bg="white", highlightthickness=0)
+        tk.Label(progress_box, text="Savings Progress", font=("Arial", 11, "bold"), bg="#3A506B", fg="white", relief="solid", borderwidth=1).pack(fill="x", pady=(0, 5))
+        
+        # Gauge Canvas
+        self.gauge_canvas = tk.Canvas(progress_box, width=80, height=80, bg="#1C2541", highlightthickness=0)
         self.gauge_canvas.pack(side="left")
-        self.lbl_progress_text = tk.Label(progress_box, text="0% of Goal\nAchieved", font=("Arial", 10, "bold"), bg="white", justify="left")
+        self.lbl_progress_text = tk.Label(progress_box, text="0% of Goal\nAchieved", font=("Arial", 10, "bold"), bg="#1C2541", fg="white", justify="left")
         self.lbl_progress_text.pack(side="left", padx=5)
 
         # BREAKDOWNS
-        breakdown_container = tk.Frame(content_frame, bg="white")
+        breakdown_container = tk.Frame(content_frame, bg="#0B132B")
         breakdown_container.grid(row=1, column=0, sticky="nsew", padx=(0, 10))
 
-        self.expense_box = tk.Frame(breakdown_container, bg="white", relief="solid", borderwidth=1)
+        self.expense_box = tk.Frame(breakdown_container, bg="#1C2541", relief="solid", borderwidth=1)
         self.expense_box.pack(fill="both", expand=True, pady=(0, 5))
-        tk.Label(self.expense_box, text="Expense Breakdown", font=("Arial", 11, "bold"), bg="#d9d9d9", relief="solid", borderwidth=1).pack(fill="x")
-        self.expense_rows = tk.Frame(self.expense_box, bg="white")
+        tk.Label(self.expense_box, text="Expense Breakdown", font=("Arial", 11, "bold"), bg="#3A506B", fg="white", relief="solid", borderwidth=1).pack(fill="x")
+        self.expense_rows = tk.Frame(self.expense_box, bg="#1C2541")
         self.expense_rows.pack(fill="both", expand=True)
 
-        self.income_box = tk.Frame(breakdown_container, bg="white", relief="solid", borderwidth=1)
+        self.income_box = tk.Frame(breakdown_container, bg="#1C2541", relief="solid", borderwidth=1)
         self.income_box.pack(fill="both", expand=True, pady=(5, 0))
-        tk.Label(self.income_box, text="Income Breakdown", font=("Arial", 11, "bold"), bg="#d9d9d9", relief="solid", borderwidth=1).pack(fill="x")
-        self.income_rows = tk.Frame(self.income_box, bg="white")
+        tk.Label(self.income_box, text="Income Breakdown", font=("Arial", 11, "bold"), bg="#3A506B", fg="white", relief="solid", borderwidth=1).pack(fill="x")
+        self.income_rows = tk.Frame(self.income_box, bg="#1C2541")
         self.income_rows.pack(fill="both", expand=True)
 
-        # --- CHARTS AREA WITH DYNAMIC BINDING ---
-        # ROW 1, COL 1: Charts Area (Expense Analytics Container)
-        charts_box = tk.Frame(content_frame, bg="#d9d9d9", relief="solid", borderwidth=1)
+        # --- CHARTS AREA ---
+        charts_box = tk.Frame(content_frame, bg="#1C2541", relief="solid", borderwidth=1)
         charts_box.grid(row=1, column=1, sticky="nsew") 
         
-        # --- NEW SECTION HEADER: Expense Analytics ---
         tk.Label(charts_box, text="Expenses Analytics", font=("Arial", 11, "bold"), 
-                 bg="white", relief="solid", borderwidth=1).pack(fill="x")
+                 bg="#3A506B", fg="white", relief="solid", borderwidth=1).pack(fill="x")
         
-        # Inner Frame to provide padding for the actual content
-        charts_inner = tk.Frame(charts_box, bg="#d9d9d9", padx=10, pady=10)
+        charts_inner = tk.Frame(charts_box, bg="#1C2541", padx=10, pady=10)
         charts_inner.pack(fill="both", expand=True)
 
-        # The Canvas now lives inside charts_inner
-        self.chart_canvas = tk.Canvas(charts_inner, bg="#d9d9d9", highlightthickness=0)
+        self.chart_canvas = tk.Canvas(charts_inner, bg="#1C2541", highlightthickness=0)
         self.chart_canvas.pack(fill="both", expand=True)
-
-        # Re-bind the resize event to the new container
         self.chart_canvas.bind("<Configure>", lambda event: self.load_data())
 
-
-        # --- FOOTER SECTION (Modern Dark Style) ---
-        footer_frame = tk.Frame(self, bg="white")
+        # --- FOOTER SECTION (Centered Buttons) ---
+        footer_frame = tk.Frame(self, bg="#0B132B")
         footer_frame.pack(side="bottom", pady=20)
 
-        # The "Logout" Style Button Configuration
+        # Style matching the Midnight Navy theme
         dark_btn_style = {
             "font": ("Arial", 11, "bold"),
-            "bg": "#333",               # Dark Charcoal
-            "fg": "white",              # White Text
-            "relief": "flat",           # Clean flat look
-            "activebackground": "#555", # Hover color
+            "bg": "#3A506B",
+            "fg": "white",
+            "relief": "flat",
+            "activebackground": "#1C2541",
             "activeforeground": "white",
             "height": 2,
-            "width": 22
+            "width": 20
         }
 
-        tk.Button(footer_frame, text="ADD INCOME", 
-                  command=lambda: controller.show_frame("AddIncomePage"), **dark_btn_style).pack(side="left", padx=5)
-        
-        tk.Button(footer_frame, text="ADD EXPENSE", 
-                  command=lambda: controller.show_frame("AddExpensePage"), **dark_btn_style).pack(side="left", padx=5)
-        
-        tk.Button(footer_frame, text="BACK TO DASHBOARD", 
-                  command=lambda: controller.show_frame("DashboardPage"), **dark_btn_style).pack(side="left", padx=5)
+        tk.Button(footer_frame, text="ADD INCOME", command=lambda: controller.show_frame("AddIncomePage"), **dark_btn_style).pack(side="left", padx=10)
+        tk.Button(footer_frame, text="ADD EXPENSE", command=lambda: controller.show_frame("AddExpensePage"), **dark_btn_style).pack(side="left", padx=10)
+        tk.Button(footer_frame, text="BACK TO DASHBOARD", command=lambda: controller.show_frame("DashboardPage"), **dark_btn_style).pack(side="left", padx=10)
 
     def load_data(self):
         u_id = getattr(self.controller, 'current_user_id', None)
         if not u_id: return
 
-        # Force Tkinter to refresh current dimensions so we get the REAL width
         self.update_idletasks()
         canvas_w = self.chart_canvas.winfo_width()
-        
-        # Default fallback for initial load
         if canvas_w < 10: canvas_w = 450 
 
         # Reset Header Icon
         self.canvas_user.delete("all")
-        self.canvas_user.create_oval(5, 5, 35, 35, fill="black")
+        self.canvas_user.create_oval(5, 5, 35, 35, fill="#3A506B", outline="white")
 
         try:
             with sqlite3.connect("cashatan.db") as connection:
@@ -1020,130 +1025,92 @@ class BudgetOverviewPage(tk.Frame):
                 progress_pct = (avail_for_exp / goal * 100) if goal > 0 else 0
                 progress_pct = max(0, min(progress_pct, 100))
 
-                # Labels
                 self.lbl_monthly_inc.config(text=f"Total Monthly Income: ₱{total_income:,.2f}")
                 self.lbl_savings_goal.config(text=f"Monthly Savings Goal: ₱{goal:,.2f}")
-                self.lbl_avail_exp.config(text=f"Available for Expenses (Savings): ₱{avail_for_exp:,.2f}")
+                self.lbl_avail_exp.config(text=f"Available for Expenses: ₱{avail_for_exp:,.2f}")
                 self.lbl_total_exp.config(text=f"Total Expenses: ₱{total_expenses:,.2f}")
-                self.lbl_remain_bud.config(text=f"Remaining Budget (Savings): ₱{avail_for_exp:,.2f}")
+                self.lbl_remain_bud.config(text=f"Remaining Budget: ₱{avail_for_exp:,.2f}")
 
-                # 3. Breakdowns
+                # 3. Breakdowns Rows (Dark Navy background with white text)
                 for w in self.expense_rows.winfo_children(): w.destroy()
                 cursor.execute("SELECT category, SUM(amount) FROM transactions WHERE user_id=? AND type='Expense' GROUP BY category", (u_id,))
                 exp_cats = cursor.fetchall()
                 for cat, amt in exp_cats:
-                    row = tk.Frame(self.expense_rows, bg="white")
+                    row = tk.Frame(self.expense_rows, bg="#1C2541")
                     row.pack(fill="x", padx=10, pady=2)
-                    tk.Label(row, text=cat, bg="white").pack(side="left")
-                    tk.Label(row, text=f"₱{amt:,.0f}", bg="white", font=("Arial", 10, "bold")).pack(side="right")
+                    tk.Label(row, text=cat, bg="#1C2541", fg="white").pack(side="left")
+                    tk.Label(row, text=f"₱{amt:,.0f}", bg="#1C2541", fg="#00FFCC", font=("Arial", 10, "bold")).pack(side="right")
 
                 for w in self.income_rows.winfo_children(): w.destroy()
                 cursor.execute("SELECT category, SUM(amount) FROM transactions WHERE user_id=? AND type='Income' GROUP BY category", (u_id,))
                 for src, amt in cursor.fetchall():
-                    row = tk.Frame(self.income_rows, bg="white")
+                    row = tk.Frame(self.income_rows, bg="#1C2541")
                     row.pack(fill="x", padx=10, pady=2)
-                    tk.Label(row, text=src, bg="white").pack(side="left")
-                    tk.Label(row, text=f"₱{amt:,.0f}", bg="white", font=("Arial", 10, "bold")).pack(side="right")
+                    tk.Label(row, text=src, bg="#1C2541", fg="white").pack(side="left")
+                    tk.Label(row, text=f"₱{amt:,.0f}", bg="#1C2541", fg="#7ED321", font=("Arial", 10, "bold")).pack(side="right")
 
-                # 4. Progress Gauge
+                # 4. Progress Gauge - VIBRANT COLOR (Neon Orange)
                 self.gauge_canvas.delete("all")
-                self.gauge_canvas.create_oval(10, 10, 70, 70, outline="#d9d9d9", width=4)
+                self.gauge_canvas.create_oval(10, 10, 70, 70, outline="#3A506B", width=4)
                 extent = -(progress_pct / 100) * 359.9
-                self.gauge_canvas.create_arc(10, 10, 70, 70, start=90, extent=extent, outline="black", width=4, style="arc")
-                self.gauge_canvas.create_text(40, 40, text=f"{int(progress_pct)}%", font=("Arial", 10, "bold"))
+                self.gauge_canvas.create_arc(10, 10, 70, 70, start=90, extent=extent, outline="#FF9F1C", width=5, style="arc")
+                self.gauge_canvas.create_text(40, 40, text=f"{int(progress_pct)}%", font=("Arial", 10, "bold"), fill="white")
                 self.lbl_progress_text.config(text=f"{int(progress_pct)}% of Goal\nAchieved")
 
-                # --- 5. FULLY RESPONSIVE DYNAMIC CHARTS ---
-                # --- 5. BALANCED RESPONSIVE CHARTS ---
+                # --- 5. DYNAMIC CHARTS (VIBRANT COLORS) ---
                 self.chart_canvas.delete("all")
-                
-                # Measure current canvas size
-                self.update_idletasks()
-                canvas_w = self.chart_canvas.winfo_width()
                 canvas_h = self.chart_canvas.winfo_height()
-                
-                if canvas_w <= 1: canvas_w, canvas_h = 500, 300
+                if canvas_h <= 1: canvas_h = 300
 
-                # --- 1. COORDINATE MATH (Balanced Sizing) ---
-                num_cats = len(exp_cats)
-                
-                # PIE POSITIONING: Shifted left of center (60% across)
-                # to guarantee room for the legend on the right.
-                pie_cx = canvas_w * 0.60
-                pie_cy = canvas_h * 0.45 
-                
-                # RADIUS: Reduced multipliers (12% of width / 20% of height)
-                # This prevents it from "exploding" in smaller windows.
+                # Coordinate Math
+                pie_cx, pie_cy = canvas_w * 0.60, canvas_h * 0.45 
                 pie_r = min(canvas_w * 0.12, canvas_h * 0.20)
-                
-                # TITLES: Anchored relative to height
                 title_y = canvas_h * 0.08
-
-                # LINE CHART: Stays on the left side
                 line_x_start, line_x_end = canvas_w * 0.08, canvas_w * 0.40
-                line_y_bottom = canvas_h * 0.75
-                line_y_top = canvas_h * 0.20
-                line_center_x = (line_x_start + line_x_end) / 2
+                line_y_bottom, line_y_top = canvas_h * 0.75, canvas_h * 0.20
 
-                # --- 2. DRAW DYNAMIC TITLES ---
+                # Titles (White)
                 title_font = ("Arial", max(9, int(canvas_h * 0.04)), "bold")
-                self.chart_canvas.create_text(line_center_x, title_y, text="Expenses Over Time", font=title_font)
-                self.chart_canvas.create_text(pie_cx, title_y, text="Expenses Categories", font=title_font)
+                self.chart_canvas.create_text((line_x_start + line_x_end) / 2, title_y, text="Expenses Over Time", font=title_font, fill="white")
+                self.chart_canvas.create_text(pie_cx, title_y, text="Expenses Categories", font=title_font, fill="white")
 
-                # --- 3. DYNAMIC PIE CHART & SIDE LEGEND ---
+                # VIBRANT COLOR PALETTE
+                vibrant_colors = ["#00FFCC", "#FF007F", "#7ED321", "#FFD700", "#BD10E0", "#50E3C2", "#F5A623"]
+
+                # Vibrant Pie Chart
                 if total_expenses > 0:
                     start_ang = 90
-                    colors = ["#333", "#555", "#777", "#999", "#bbb", "#ddd", "#888"]
-                    
-                    # Legend Row Height
                     line_height = max(12, int(canvas_h * 0.045))
-                    
                     for i, (cat, amt) in enumerate(exp_cats):
                         extent = -(amt / total_expenses) * 359.9
-                        percentage = (amt / total_expenses) * 100
+                        color = vibrant_colors[i % len(vibrant_colors)]
+                        self.chart_canvas.create_arc(pie_cx - pie_r, pie_cy - pie_r, pie_cx + pie_r, pie_cy + pie_r, 
+                                                     start=start_ang, extent=extent, fill=color, outline="#1C2541")
                         
-                        # Draw Pie (Smaller radius for better fit)
-                        self.chart_canvas.create_arc(pie_cx - pie_r, pie_cy - pie_r, 
-                                                     pie_cx + pie_r, pie_cy + pie_r, 
-                                                     start=start_ang, extent=extent, 
-                                                     fill=colors[i % len(colors)], outline="white", width=1)
-                        
-                        # --- SIDE LEGEND POSITIONING ---
-                        # lx starts right after the pie circle
-                        lx = pie_cx + pie_r + 15
-                        # ly stacks vertically starting near the top of the pie
-                        ly = (pie_cy - pie_r) + (i * line_height)
-                        
-                        sq_size = max(8, int(line_height * 0.6))
-                        self.chart_canvas.create_rectangle(lx, ly, lx + sq_size, ly + sq_size, 
-                                                           fill=colors[i % len(colors)], outline="black")
-                        
-                        # Legend Text (Smaller font for safety)
-                        font_size = max(7, int(canvas_h * 0.028))
-                        self.chart_canvas.create_text(lx + sq_size + 8, ly + (sq_size/2), 
-                                                      text=f"{cat}: ({percentage:.1f}%)", 
-                                                      font=("Arial", font_size, "bold"), anchor="w")
+                        # Legend
+                        lx, ly = pie_cx + pie_r + 15, (pie_cy - pie_r) + (i * line_height)
+                        sq = max(8, int(line_height * 0.6))
+                        self.chart_canvas.create_rectangle(lx, ly, lx + sq, ly + sq, fill=color, outline="white")
+                        self.chart_canvas.create_text(lx + sq + 8, ly + (sq/2), text=cat, font=("Arial", 8, "bold"), anchor="w", fill="white")
                         start_ang += extent
 
-                # --- 4. DYNAMIC LINE CHART (Kept as is) ---
+                # Vibrant Line Chart (Neon Blue Line)
                 cursor.execute("SELECT date, amount FROM transactions WHERE user_id=? AND type='Expense' ORDER BY date DESC LIMIT 5", (u_id,))
                 data_points = cursor.fetchall()[::-1]
                 if data_points:
-                    max_v = max(float(d[1]) for d in data_points) if max(float(d[1]) for d in data_points) > 0 else 1
+                    max_v = max(float(d[1]) for d in data_points) if data_points else 1
                     pts = []
                     spacing = (line_x_end - line_x_start) / 4 
                     for i, (t_date, val) in enumerate(data_points):
                         x = line_x_start + (i * spacing)
-                        y = line_y_bottom - (float(val) / max_v * (line_y_bottom - line_y_top))
+                        y = line_y_bottom - (float(val) / (max_v if max_v > 0 else 1) * (line_y_bottom - line_y_top))
                         pts.extend([x, y])
-                        self.chart_canvas.create_text(x, line_y_bottom + 20, text=t_date[-5:], 
-                                                      font=("Arial", max(6, int(canvas_h * 0.025))), angle=45)
                     if len(pts) > 2:
-                        self.chart_canvas.create_line(pts, width=3, fill="black", smooth=True)
+                        self.chart_canvas.create_line(pts, width=3, fill="#00E5FF", smooth=True) # Neon Blue line
                 
-                # Draw Axis
-                self.chart_canvas.create_line(line_x_start - 5, line_y_bottom, line_x_end + 10, line_y_bottom) 
-                self.chart_canvas.create_line(line_x_start - 5, line_y_top, line_x_start - 5, line_y_bottom)
+                # Axes (White/Steel Blue)
+                self.chart_canvas.create_line(line_x_start - 5, line_y_bottom, line_x_end + 10, line_y_bottom, fill="white") 
+                self.chart_canvas.create_line(line_x_start - 5, line_y_top, line_x_start - 5, line_y_bottom, fill="white")
 
         except Exception as e:
             print(f"Error updating Overview: {e}")
