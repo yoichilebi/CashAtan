@@ -485,7 +485,6 @@ class AddExpensePage(tk.Frame):
         header_frame.pack(fill="x", padx=20, pady=(20, 10))
 
         tk.Label(header_frame, text="ADD EXPENSE", font=("Arial", 24, "bold"), bg="white").pack()
-        # The iconic black divider line
         tk.Frame(self, height=2, bg="black").pack(fill="x", padx=20, pady=(0, 40))
 
         # --- FORM CONTAINER ---
@@ -506,20 +505,18 @@ class AddExpensePage(tk.Frame):
                                   foreground='white', borderwidth=1, relief="solid", date_pattern='y-mm-dd')
             
             elif field == "Category:":
-                # Solid styled Combobox
                 entry = ttk.Combobox(form_container, values=categories, width=28, font=("Arial", 12), state="readonly")
                 entry.set("Select Category") 
             
             else:
-                # Login-style Entry boxes
                 entry = tk.Entry(form_container, font=("Arial", 12), width=30, relief="solid", borderwidth=1)
             
             entry.grid(row=i, column=1, padx=10, pady=10, sticky="w")
             self.entries[field] = entry
 
-        # --- FOOTER BUTTONS ---
+        # --- FOOTER BUTTONS (Centered and Closer) ---
         btn_frame = tk.Frame(self, bg="white")
-        btn_frame.pack(side="bottom", fill="x", pady=20)
+        btn_frame.pack(side="bottom", pady=30) # Removed fill="x" to allow centering
 
         dark_btn_style = {
             "font": ("Arial", 11, "bold"),
@@ -527,14 +524,14 @@ class AddExpensePage(tk.Frame):
             "fg": "white",
             "relief": "flat",
             "height": 2,
-            "width": 22
+            "width": 20 # Slightly narrower for better grouping
         }
 
-        tk.Button(btn_frame, text="SAVE EXPENSE", command=self.save_to_db, **dark_btn_style).pack(side="left", expand=True, padx=5)
-        tk.Button(btn_frame, text="BACK TO DASHBOARD", command=lambda: controller.show_frame("DashboardPage"), **dark_btn_style).pack(side="left", expand=True, padx=5)
+        # Removed expand=True to bring them closer
+        tk.Button(btn_frame, text="SAVE EXPENSE", command=self.save_to_db, **dark_btn_style).pack(side="left", padx=10)
+        tk.Button(btn_frame, text="BACK TO DASHBOARD", command=lambda: controller.show_frame("DashboardPage"), **dark_btn_style).pack(side="left", padx=10)
 
     def save_to_db(self):
-        """Modified logic to enforce category selection."""
         date = self.entries["Date:"].get()
         category = self.entries["Category:"].get()
         amount = self.entries["Amount:"].get()
@@ -545,7 +542,7 @@ class AddExpensePage(tk.Frame):
             messagebox.showerror("Error", "No user logged in!")
             return
 
-        # REQUIRED FIELD VALIDATION (Enforcing category selection)
+        # REQUIRED FIELD VALIDATION
         if category == "Select Category":
             messagebox.showwarning("Selection Required", "Please select a valid Category.")
             return
@@ -572,7 +569,7 @@ class AddExpensePage(tk.Frame):
                 widget.set("Select Category")
             elif field != "Date:":
                 widget.delete(0, tk.END)
-    
+
 class AddIncomePage(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent)
@@ -613,9 +610,9 @@ class AddIncomePage(tk.Frame):
             entry.grid(row=i, column=1, padx=10, pady=10, sticky="w")
             self.entries[field] = entry
 
-        # --- FOOTER BUTTONS ---
+        # --- FOOTER BUTTONS (Centered and Closer) ---
         btn_frame = tk.Frame(self, bg="white")
-        btn_frame.pack(side="bottom", fill="x", pady=20)
+        btn_frame.pack(side="bottom", pady=30) 
 
         dark_btn_style = {
             "font": ("Arial", 11, "bold"),
@@ -623,14 +620,14 @@ class AddIncomePage(tk.Frame):
             "fg": "white",
             "relief": "flat",
             "height": 2,
-            "width": 22
+            "width": 20
         }
 
-        tk.Button(btn_frame, text="SAVE INCOME", command=self.save_income_to_db, **dark_btn_style).pack(side="left", expand=True, padx=5)
-        tk.Button(btn_frame, text="BACK TO DASHBOARD", command=lambda: controller.show_frame("DashboardPage"), **dark_btn_style).pack(side="left", expand=True, padx=5)
+        # Removed expand=True to bring them closer
+        tk.Button(btn_frame, text="SAVE INCOME", command=self.save_income_to_db, **dark_btn_style).pack(side="left", padx=10)
+        tk.Button(btn_frame, text="BACK TO DASHBOARD", command=lambda: controller.show_frame("DashboardPage"), **dark_btn_style).pack(side="left", padx=10)
 
     def save_income_to_db(self):
-        """Modified logic to enforce source selection."""
         date = self.entries["Date:"].get()
         source = self.entries["Source:"].get()
         amount = self.entries["Amount:"].get()
