@@ -951,7 +951,7 @@ class BudgetOverviewPage(tk.Frame):
 
         # --- FOOTER SECTION (Modern Dark Style) ---
         footer_frame = tk.Frame(self, bg="white")
-        footer_frame.pack(fill="x", side="bottom", pady=20)
+        footer_frame.pack(side="bottom", pady=20)
 
         # The "Logout" Style Button Configuration
         dark_btn_style = {
@@ -966,13 +966,13 @@ class BudgetOverviewPage(tk.Frame):
         }
 
         tk.Button(footer_frame, text="ADD INCOME", 
-                  command=lambda: controller.show_frame("AddIncomePage"), **dark_btn_style).pack(side="left", expand=True, padx=5)
+                  command=lambda: controller.show_frame("AddIncomePage"), **dark_btn_style).pack(side="left", padx=5)
         
         tk.Button(footer_frame, text="ADD EXPENSE", 
-                  command=lambda: controller.show_frame("AddExpensePage"), **dark_btn_style).pack(side="left", expand=True, padx=5)
+                  command=lambda: controller.show_frame("AddExpensePage"), **dark_btn_style).pack(side="left", padx=5)
         
         tk.Button(footer_frame, text="BACK TO DASHBOARD", 
-                  command=lambda: controller.show_frame("DashboardPage"), **dark_btn_style).pack(side="left", expand=True, padx=5)
+                  command=lambda: controller.show_frame("DashboardPage"), **dark_btn_style).pack(side="left", padx=5)
 
     def load_data(self):
         u_id = getattr(self.controller, 'current_user_id', None)
