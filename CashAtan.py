@@ -882,18 +882,23 @@ class BudgetOverviewPage(tk.Frame):
         self.income_rows.pack(fill="both", expand=True)
 
         # --- CHARTS AREA WITH DYNAMIC BINDING ---
-        charts_box = tk.Frame(content_frame, bg="#d9d9d9", padx=10, pady=10, relief="solid", borderwidth=1)
-        charts_box.grid(row=1, column=1, sticky="nsew")
+        # ROW 1, COL 1: Charts Area (Expense Analytics Container)
+        charts_box = tk.Frame(content_frame, bg="#d9d9d9", relief="solid", borderwidth=1)
+        charts_box.grid(row=1, column=1, sticky="nsew") 
         
-        chart_titles = tk.Frame(charts_box, bg="#d9d9d9")
-        chart_titles.pack(fill="x")
-        tk.Label(chart_titles, text="Expenses Over Time", font=("Arial", 10, "bold"), bg="#d9d9d9").pack(side="left", padx=20)
-        tk.Label(chart_titles, text="Expenses Categories", font=("Arial", 10, "bold"), bg="#d9d9d9").pack(side="right", padx=40)
+        # --- NEW SECTION HEADER: Expense Analytics ---
+        tk.Label(charts_box, text="Expenses Analytics", font=("Arial", 11, "bold"), 
+                 bg="white", relief="solid", borderwidth=1).pack(fill="x")
+        
+        # Inner Frame to provide padding for the actual content
+        charts_inner = tk.Frame(charts_box, bg="#d9d9d9", padx=10, pady=10)
+        charts_inner.pack(fill="both", expand=True)
 
-        self.chart_canvas = tk.Canvas(charts_box, bg="#d9d9d9", highlightthickness=0)
+        # The Canvas now lives inside charts_inner
+        self.chart_canvas = tk.Canvas(charts_inner, bg="#d9d9d9", highlightthickness=0)
         self.chart_canvas.pack(fill="both", expand=True)
 
-        # THE FIX: This line tells the canvas to redraw everything whenever it is resized
+        # Re-bind the resize event to the new container
         self.chart_canvas.bind("<Configure>", lambda event: self.load_data())
 
 
@@ -1000,49 +1005,97 @@ class BudgetOverviewPage(tk.Frame):
                 self.gauge_canvas.create_text(40, 40, text=f"{int(progress_pct)}%", font=("Arial", 10, "bold"))
                 self.lbl_progress_text.config(text=f"{int(progress_pct)}% of Goal\nAchieved")
 
-                # --- 5. DYNAMIC CHARTS REDRAW ---
+                # --- 5. FULLY RESPONSIVE DYNAMIC CHARTS ---
+                # --- 5. BALANCED RESPONSIVE CHARTS ---
                 self.chart_canvas.delete("all")
                 
-                # PIE CHART POSITION (Relative to right edge)
-                pie_center_x = canvas_w - 120 
+                # Measure current canvas size
+                self.update_idletasks()
+                canvas_w = self.chart_canvas.winfo_width()
+                canvas_h = self.chart_canvas.winfo_height()
                 
+                if canvas_w <= 1: canvas_w, canvas_h = 500, 300
+
+                # --- 1. COORDINATE MATH (Balanced Sizing) ---
+                num_cats = len(exp_cats)
+                
+                # PIE POSITIONING: Shifted left of center (60% across)
+                # to guarantee room for the legend on the right.
+                pie_cx = canvas_w * 0.60
+                pie_cy = canvas_h * 0.45 
+                
+                # RADIUS: Reduced multipliers (12% of width / 20% of height)
+                # This prevents it from "exploding" in smaller windows.
+                pie_r = min(canvas_w * 0.12, canvas_h * 0.20)
+                
+                # TITLES: Anchored relative to height
+                title_y = canvas_h * 0.08
+
+                # LINE CHART: Stays on the left side
+                line_x_start, line_x_end = canvas_w * 0.08, canvas_w * 0.40
+                line_y_bottom = canvas_h * 0.75
+                line_y_top = canvas_h * 0.20
+                line_center_x = (line_x_start + line_x_end) / 2
+
+                # --- 2. DRAW DYNAMIC TITLES ---
+                title_font = ("Arial", max(9, int(canvas_h * 0.04)), "bold")
+                self.chart_canvas.create_text(line_center_x, title_y, text="Expenses Over Time", font=title_font)
+                self.chart_canvas.create_text(pie_cx, title_y, text="Expenses Categories", font=title_font)
+
+                # --- 3. DYNAMIC PIE CHART & SIDE LEGEND ---
                 if total_expenses > 0:
                     start_ang = 90
-                    colors = ["#333", "#555", "#777", "#999", "#bbb", "#ddd"]
+                    colors = ["#333", "#555", "#777", "#999", "#bbb", "#ddd", "#888"]
+                    
+                    # Legend Row Height
+                    line_height = max(12, int(canvas_h * 0.045))
+                    
                     for i, (cat, amt) in enumerate(exp_cats):
                         extent = -(amt / total_expenses) * 359.9
                         percentage = (amt / total_expenses) * 100
                         
-                        # Draw Pie Slice
-                        self.chart_canvas.create_arc(pie_center_x - 50, 15, pie_center_x + 50, 115, 
+                        # Draw Pie (Smaller radius for better fit)
+                        self.chart_canvas.create_arc(pie_cx - pie_r, pie_cy - pie_r, 
+                                                     pie_cx + pie_r, pie_cy + pie_r, 
                                                      start=start_ang, extent=extent, 
-                                                     fill=colors[i % len(colors)], outline="white")
+                                                     fill=colors[i % len(colors)], outline="white", width=1)
                         
-                        # Dynamic Legend
-                        lx = pie_center_x - 70
-                        ly = 135 + (i * 18)
-                        self.chart_canvas.create_rectangle(lx, ly, lx+10, ly+10, fill=colors[i % len(colors)])
-                        self.chart_canvas.create_text(lx + 15, ly + 5, text=f"{cat}: ({percentage:.1f}%)", 
-                                                      font=("Arial", 7, "bold"), anchor="w")
+                        # --- SIDE LEGEND POSITIONING ---
+                        # lx starts right after the pie circle
+                        lx = pie_cx + pie_r + 15
+                        # ly stacks vertically starting near the top of the pie
+                        ly = (pie_cy - pie_r) + (i * line_height)
+                        
+                        sq_size = max(8, int(line_height * 0.6))
+                        self.chart_canvas.create_rectangle(lx, ly, lx + sq_size, ly + sq_size, 
+                                                           fill=colors[i % len(colors)], outline="black")
+                        
+                        # Legend Text (Smaller font for safety)
+                        font_size = max(7, int(canvas_h * 0.028))
+                        self.chart_canvas.create_text(lx + sq_size + 8, ly + (sq_size/2), 
+                                                      text=f"{cat}: ({percentage:.1f}%)", 
+                                                      font=("Arial", font_size, "bold"), anchor="w")
                         start_ang += extent
 
-                # LINE CHART (Anchored to Left)
+                # --- 4. DYNAMIC LINE CHART (Kept as is) ---
                 cursor.execute("SELECT date, amount FROM transactions WHERE user_id=? AND type='Expense' ORDER BY date DESC LIMIT 5", (u_id,))
                 data_points = cursor.fetchall()[::-1]
                 if data_points:
                     max_v = max(float(d[1]) for d in data_points) if max(float(d[1]) for d in data_points) > 0 else 1
                     pts = []
+                    spacing = (line_x_end - line_x_start) / 4 
                     for i, (t_date, val) in enumerate(data_points):
-                        x = 30 + (i * 35)
-                        y = 110 - (float(val) / max_v * 75)
+                        x = line_x_start + (i * spacing)
+                        y = line_y_bottom - (float(val) / max_v * (line_y_bottom - line_y_top))
                         pts.extend([x, y])
-                        self.chart_canvas.create_text(x, 125, text=t_date[-5:], font=("Arial", 7), angle=45)
+                        self.chart_canvas.create_text(x, line_y_bottom + 20, text=t_date[-5:], 
+                                                      font=("Arial", max(6, int(canvas_h * 0.025))), angle=45)
                     if len(pts) > 2:
-                        self.chart_canvas.create_line(pts, width=2, fill="black", smooth=True)
+                        self.chart_canvas.create_line(pts, width=3, fill="black", smooth=True)
                 
                 # Draw Axis
-                self.chart_canvas.create_line(25, 115, 180, 115) 
-                self.chart_canvas.create_line(25, 20, 25, 115)
+                self.chart_canvas.create_line(line_x_start - 5, line_y_bottom, line_x_end + 10, line_y_bottom) 
+                self.chart_canvas.create_line(line_x_start - 5, line_y_top, line_x_start - 5, line_y_bottom)
 
         except Exception as e:
             print(f"Error updating Overview: {e}")
