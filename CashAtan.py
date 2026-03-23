@@ -478,200 +478,195 @@ class AddExpensePage(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent)
         self.controller = controller
+        self.configure(bg="white")
 
-        # 1. Title
-        tk.Label(self, text="ADD EXPENSE", font=("Arial", 18, "bold")).pack(pady=20)
+        # --- HEADER SECTION ---
+        header_frame = tk.Frame(self, bg="white")
+        header_frame.pack(fill="x", padx=20, pady=(20, 10))
 
-        # 2. Form Container
-        form_frame = tk.Frame(self)
-        form_frame.pack(pady=10)
+        tk.Label(header_frame, text="ADD EXPENSE", font=("Arial", 24, "bold"), bg="white").pack()
+        # The iconic black divider line
+        tk.Frame(self, height=2, bg="black").pack(fill="x", padx=20, pady=(0, 40))
 
-        # 3. Input Fields
+        # --- FORM CONTAINER ---
+        form_container = tk.Frame(self, bg="white")
+        form_container.pack(expand=True)
+
         fields = ["Date:", "Category:", "Amount:", "Notes:"]
         self.entries = {} 
-
-        # Define your expense categories here
         categories = ["Food", "Transportation", "Bills", "Groceries", "Entertainment", "Health", "Others"]
 
+        label_font = ("Arial", 12, "bold")
+
         for i, field in enumerate(fields):
-            lbl = tk.Label(form_frame, text=field, font=("Arial", 10))
-            lbl.grid(row=i, column=0, padx=10, pady=5, sticky="e")
+            tk.Label(form_container, text=field, font=label_font, bg="white").grid(row=i, column=0, padx=10, pady=10, sticky="e")
             
             if field == "Date:":
-                entry = DateEntry(form_frame, width=25, background='darkblue', 
-                                  foreground='white', borderwidth=2, 
-                                  date_pattern='y-mm-dd')
+                entry = DateEntry(form_container, width=28, font=("Arial", 12), background='black', 
+                                  foreground='white', borderwidth=1, relief="solid", date_pattern='y-mm-dd')
             
             elif field == "Category:":
-                # This is your "Dropdown but Radiobutton" replacement
-                entry = ttk.Combobox(form_frame, values=categories, width=25, state="readonly")
-                entry.set("Select Category") # Default text
+                # Solid styled Combobox
+                entry = ttk.Combobox(form_container, values=categories, width=28, font=("Arial", 12), state="readonly")
+                entry.set("Select Category") 
             
             else:
-                entry = tk.Entry(form_frame, font=("Arial", 10), width=24)
+                # Login-style Entry boxes
+                entry = tk.Entry(form_container, font=("Arial", 12), width=30, relief="solid", borderwidth=1)
             
-            entry.grid(row=i, column=1, padx=10, pady=5, sticky="w")
+            entry.grid(row=i, column=1, padx=10, pady=10, sticky="w")
             self.entries[field] = entry
 
+        # --- FOOTER BUTTONS ---
+        btn_frame = tk.Frame(self, bg="white")
+        btn_frame.pack(side="bottom", fill="x", pady=20)
 
-        # 4. Buttons
-        button_frame = tk.Frame(self)
-        button_frame.pack(pady=(0, 20))
+        dark_btn_style = {
+            "font": ("Arial", 11, "bold"),
+            "bg": "#333",
+            "fg": "white",
+            "relief": "flat",
+            "height": 2,
+            "width": 22
+        }
 
-        tk.Button(button_frame, text="SAVE EXPENSE", 
-                  width=18, command=self.save_to_db).pack(side="left", padx=5)
-        
-        tk.Button(button_frame, text="BACK TO DASHBOARD", 
-                  width=18, command=lambda: controller.show_frame("DashboardPage")).pack(side="left", padx=5)
+        tk.Button(btn_frame, text="SAVE EXPENSE", command=self.save_to_db, **dark_btn_style).pack(side="left", expand=True, padx=5)
+        tk.Button(btn_frame, text="BACK TO DASHBOARD", command=lambda: controller.show_frame("DashboardPage"), **dark_btn_style).pack(side="left", expand=True, padx=5)
 
-    #database for saving expense data will go here
     def save_to_db(self):
-        # 1. Get data from UI (Matching the labels in your loop)
+        """Modified logic to enforce category selection."""
         date = self.entries["Date:"].get()
         category = self.entries["Category:"].get()
         amount = self.entries["Amount:"].get()
         notes = self.entries["Notes:"].get()
-    
-        # 2. Safety Check for Logged In User
-        u_id = getattr(self.controller, 'current_user_id', None) 
-        
-        if u_id is None:
-            messagebox.showerror("Error", "No user logged in! Please restart and log in.")
-            return
-
-        if not date or not category or not amount:
-            messagebox.showwarning("Input Error", "Please fill in the required fields.")
-            return
-
-        try:
-            # We use a context manager (with) to ensure the connection closes
-            with sqlite3.connect("cashatan.db", timeout=10) as connection:
-                cursor = connection.cursor()
-                cursor.execute("PRAGMA foreign_keys = ON;") 
-                
-                # 1. Point to 'transactions' instead of 'expenses'
-                # 2. Include the 'type' column
-                query = """INSERT INTO transactions (user_id, type, amount, category, date, notes) 
-                        VALUES (?, ?, ?, ?, ?, ?)"""
-                
-                # 3. Pass 'Expense' as the type
-                cursor.execute(query, (u_id, 'Expense', float(amount), category, date, notes))
-                connection.commit()
-
-            messagebox.showinfo("Success", "Expense saved successfully!")
-            self.clear_entries()
-            
-        except ValueError:
-            messagebox.showerror("Error", "Amount must be a number (e.g. 100.50).")
-        except sqlite3.IntegrityError:
-            messagebox.showerror("Database Error", "User session invalid. Please log in again.")
-
-    #for clring the entry fields after saving an expense
-    def clear_entries(self):
-        """Clears the entry boxes and resets the dropdown selection."""
-        for field, widget in self.entries.items():
-            if field == "Category:":
-                # Reset the dropdown to the placeholder text
-                widget.set("Select Category")
-            elif field != "Date:":
-                # Clear standard text entries (Amount and Notes)
-                widget.delete(0, tk.END)
-
-
-class AddIncomePage(tk.Frame):
-    def __init__(self, parent, controller):
-        super().__init__(parent)
-        self.controller = controller
-
-        # 1. Title
-        tk.Label(self, text="ADD INCOME", font=("Arial", 18, "bold")).pack(pady=20)
-
-        # 2. Form Container (Grid Layout)
-        form_frame = tk.Frame(self)
-        form_frame.pack(pady=10)
-
-        # 3. Input Fields
-        # Note: "Income Source" maps to the 'category' column in your DB
-        fields = ["Date:", "Source:", "Amount:", "Notes:"]
-        self.entries = {} 
-
-        # Specific categories for Income
-        income_sources = ["Salary", "Freelance", "Allowance", "Gift", "Investment", "Others"]
-
-        for i, field in enumerate(fields):
-            lbl = tk.Label(form_frame, text=field, font=("Arial", 10))
-            lbl.grid(row=i, column=0, padx=10, pady=5, sticky="e")
-            
-            if field == "Date:":
-                entry = DateEntry(form_frame, width=23, background='darkblue', 
-                                  foreground='white', borderwidth=2, 
-                                  date_pattern='y-mm-dd')
-            
-            elif field == "Source:":
-                entry = ttk.Combobox(form_frame, values=income_sources, width=23, state="readonly")
-                entry.set("Select Source")
-            
-            else:
-                entry = tk.Entry(form_frame, font=("Arial", 10), width=25)
-            
-            entry.grid(row=i, column=1, padx=10, pady=5, sticky="w")
-            self.entries[field] = entry
-
-        # 4. Buttons
-        button_frame = tk.Frame(self)
-        button_frame.pack(pady=(20, 20))
-
-        tk.Button(button_frame, text="SAVE INCOME", 
-                  width=18, command=self.save_income_to_db).pack(side="left", padx=5)
-        
-        tk.Button(button_frame, text="BACK TO DASHBOARD", 
-                  width=18, command=lambda: controller.show_frame("DashboardPage")).pack(side="left", padx=5)
-
-    #database interaction for saving income data to the database
-    def save_income_to_db(self):
-        """Saves income data specifically to the transactions table."""
-        date = self.entries["Date:"].get()
-        source = self.entries["Source:"].get()
-        amount = self.entries["Amount:"].get()
-        notes = self.entries["Notes:"].get()
-    
         u_id = getattr(self.controller, 'current_user_id', None) 
         
         if u_id is None:
             messagebox.showerror("Error", "No user logged in!")
             return
 
-        if not date or source == "Select Source" or not amount:
-            messagebox.showwarning("Input Error", "Please fill in Date, Source, and Amount.")
+        # REQUIRED FIELD VALIDATION (Enforcing category selection)
+        if category == "Select Category":
+            messagebox.showwarning("Selection Required", "Please select a valid Category.")
+            return
+
+        if not date or not amount:
+            messagebox.showwarning("Input Error", "Please fill in the required fields.")
             return
 
         try:
-            # Using 'with' to prevent the "database is locked" error
             with sqlite3.connect("cashatan.db", timeout=10) as connection:
                 cursor = connection.cursor()
-                cursor.execute("PRAGMA foreign_keys = ON;") 
-                
-                # We hardcode 'Income' into the type column
-                query = """INSERT INTO transactions (user_id, type, amount, category, date, notes) 
-                        VALUES (?, ?, ?, ?, ?, ?)"""
+                query = "INSERT INTO transactions (user_id, type, amount, category, date, notes) VALUES (?, ?, ?, ?, ?, ?)"
+                cursor.execute(query, (u_id, 'Expense', float(amount), category, date, notes))
+                connection.commit()
+
+            messagebox.showinfo("Success", "Expense saved successfully!")
+            self.clear_entries()
+        except ValueError:
+            messagebox.showerror("Error", "Amount must be a number.")
+
+    def clear_entries(self):
+        for field, widget in self.entries.items():
+            if field == "Category:":
+                widget.set("Select Category")
+            elif field != "Date:":
+                widget.delete(0, tk.END)
+    
+class AddIncomePage(tk.Frame):
+    def __init__(self, parent, controller):
+        super().__init__(parent)
+        self.controller = controller
+        self.configure(bg="white")
+
+        # --- HEADER SECTION ---
+        header_frame = tk.Frame(self, bg="white")
+        header_frame.pack(fill="x", padx=20, pady=(20, 10))
+
+        tk.Label(header_frame, text="ADD INCOME", font=("Arial", 24, "bold"), bg="white").pack()
+        tk.Frame(self, height=2, bg="black").pack(fill="x", padx=20, pady=(0, 40))
+
+        # --- FORM CONTAINER ---
+        form_container = tk.Frame(self, bg="white")
+        form_container.pack(expand=True)
+
+        fields = ["Date:", "Source:", "Amount:", "Notes:"]
+        self.entries = {} 
+        income_sources = ["Salary", "Freelance", "Allowance", "Gift", "Investment", "Others"]
+
+        label_font = ("Arial", 12, "bold")
+
+        for i, field in enumerate(fields):
+            tk.Label(form_container, text=field, font=label_font, bg="white").grid(row=i, column=0, padx=10, pady=10, sticky="e")
+            
+            if field == "Date:":
+                entry = DateEntry(form_container, width=28, font=("Arial", 12), background='black', 
+                                  foreground='white', borderwidth=1, relief="solid", date_pattern='y-mm-dd')
+            
+            elif field == "Source:":
+                entry = ttk.Combobox(form_container, values=income_sources, width=28, font=("Arial", 12), state="readonly")
+                entry.set("Select Source")
+            
+            else:
+                entry = tk.Entry(form_container, font=("Arial", 12), width=30, relief="solid", borderwidth=1)
+            
+            entry.grid(row=i, column=1, padx=10, pady=10, sticky="w")
+            self.entries[field] = entry
+
+        # --- FOOTER BUTTONS ---
+        btn_frame = tk.Frame(self, bg="white")
+        btn_frame.pack(side="bottom", fill="x", pady=20)
+
+        dark_btn_style = {
+            "font": ("Arial", 11, "bold"),
+            "bg": "#333",
+            "fg": "white",
+            "relief": "flat",
+            "height": 2,
+            "width": 22
+        }
+
+        tk.Button(btn_frame, text="SAVE INCOME", command=self.save_income_to_db, **dark_btn_style).pack(side="left", expand=True, padx=5)
+        tk.Button(btn_frame, text="BACK TO DASHBOARD", command=lambda: controller.show_frame("DashboardPage"), **dark_btn_style).pack(side="left", expand=True, padx=5)
+
+    def save_income_to_db(self):
+        """Modified logic to enforce source selection."""
+        date = self.entries["Date:"].get()
+        source = self.entries["Source:"].get()
+        amount = self.entries["Amount:"].get()
+        notes = self.entries["Notes:"].get()
+        u_id = getattr(self.controller, 'current_user_id', None) 
+        
+        if u_id is None:
+            messagebox.showerror("Error", "No user logged in!")
+            return
+
+        # REQUIRED FIELD VALIDATION
+        if source == "Select Source":
+            messagebox.showwarning("Selection Required", "Please select a valid Income Source.")
+            return
+
+        if not date or not amount:
+            messagebox.showwarning("Input Error", "Please fill in Date and Amount.")
+            return
+
+        try:
+            with sqlite3.connect("cashatan.db", timeout=10) as connection:
+                cursor = connection.cursor()
+                query = "INSERT INTO transactions (user_id, type, amount, category, date, notes) VALUES (?, ?, ?, ?, ?, ?)"
                 cursor.execute(query, (u_id, 'Income', float(amount), source, date, notes))
                 connection.commit()
 
             messagebox.showinfo("Success", "Income added successfully!")
             self.clear_entries()
-            
         except ValueError:
             messagebox.showerror("Error", "Amount must be a number.")
-        except sqlite3.OperationalError:
-            messagebox.showerror("Database Error", "Database is busy. Try again in a moment.")
 
-    #for cleraing the entry fields after saving an income
     def clear_entries(self):
-        """Resets the form"""
         for field, widget in self.entries.items():
             if field == "Source:":
                 widget.set("Select Source")
-            elif field != "Date:": # Keep the date as is for convenience
+            elif field != "Date:":
                 widget.delete(0, tk.END)
 
 # --- 5. DATA TABLE TEMPLATE (VIEW TRANSACTIONS) ---
