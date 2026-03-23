@@ -265,16 +265,24 @@ class DashboardPage(tk.Frame):
     def __init__(self, parent, controller):
             super().__init__(parent)
             self.controller = controller
+            self.configure(bg="white") # Set background to white
 
-            # Page Title
-            tk.Label(self, text="DASHBOARD", font=("Arial", 24, "bold")).pack(pady=20)
+            # --- HEADER SECTION (New Style) ---
+            header_frame = tk.Frame(self, bg="white")
+            header_frame.pack(fill="x", padx=20, pady=(20, 10))
+
+            # Bold, centered Title matching Budget Overview
+            tk.Label(header_frame, text="DASHBOARD", font=("Arial", 28, "bold"), bg="white").pack()
+            
+            # The Signature Black Divider Line
+            tk.Frame(self, height=2, bg="black").pack(fill="x", padx=20, pady=(0, 20))
 
             # Main Layout Container
-            main_container = tk.Frame(self)
+            main_container = tk.Frame(self, bg="white")
             main_container.pack(fill="both", expand=True, padx=20)
 
             # --- LEFT SIDE: NAVIGATION BUTTONS ---
-            nav_frame = tk.Frame(main_container)
+            nav_frame = tk.Frame(main_container, bg="white")
             nav_frame.pack(side="left", fill="y", padx=(0, 30))
 
             btns = [
@@ -292,16 +300,16 @@ class DashboardPage(tk.Frame):
                     bg="#333", fg="white", command=lambda: controller.show_frame("LoginPage")).pack(pady=20)
 
             # --- RIGHT SIDE: MINI PROFILE ---
-            profile_frame = tk.LabelFrame(main_container, text="Profile", font=("Arial", 12, "bold"), padx=20, pady=20)
+            profile_frame = tk.LabelFrame(main_container, text="Profile", bg="white", font=("Arial", 12, "bold" ), padx=20, pady=20)
             profile_frame.pack(side="right", fill="both", expand=True)
 
             # Top section: Image and Username/Date/Goal
-            top_row = tk.Frame(profile_frame)
+            top_row = tk.Frame(profile_frame, bg="white")
             top_row.pack(fill="x")
 
             # Profile Image Slot
             # Inside your DashboardPage __init__
-            self.img_label = tk.Label(top_row, bg="#ddd", relief="solid", borderwidth=1)
+            self.img_label = tk.Label(top_row, bg="white", relief="solid", borderwidth=1)
             self.img_label.grid(row=0, column=0, rowspan=4, padx=(0, 20), sticky="nsew")
 
             # Create a "blank" square image to hold the space if no photo is uploaded yet
@@ -317,17 +325,17 @@ class DashboardPage(tk.Frame):
 
             # row=0: Username (No box)
             tk.Label(top_row, textvariable=self.username_var, font=("Arial", 12, "bold"), 
-                    anchor="w").grid(row=0, column=1, pady=2, padx=10, sticky="w")
+                    anchor="w", bg="white").grid(row=0, column=1, pady=2, padx=10, sticky="w")
             
             # row=1: Date (No box)
             tk.Label(top_row, textvariable=self.date_var, font=("Arial", 10), 
-                    fg="gray", anchor="w").grid(row=1, column=1, pady=2, padx=10, sticky="w")
+                    fg="gray", anchor="w", bg="white").grid(row=1, column=1, pady=2, padx=10, sticky="w")
             
             # row=2: Budget Goal Input Section
-            goal_input_frame = tk.Frame(top_row)
+            goal_input_frame = tk.Frame(top_row, bg="white")
             goal_input_frame.grid(row=2, column=1, pady=5, padx=10, sticky="w")
 
-            tk.Label(goal_input_frame, text="Budget Goal: ₱", font=("Arial", 10)).pack(side="left")
+            tk.Label(goal_input_frame, text="Budget Goal: ₱", font=("Arial", 10), bg="white").pack(side="left")
             
             # This is where the user types the number
             self.goal_entry = tk.Entry(goal_input_frame, width=15, font=("Arial", 10))
@@ -343,7 +351,7 @@ class DashboardPage(tk.Frame):
 
 
             # --- BOTTOM SECTION: FINANCIAL STATS ---
-            stats_frame = tk.Frame(profile_frame)
+            stats_frame = tk.Frame(profile_frame, bg="white")
             stats_frame.pack(fill="x", pady=20, anchor="w")
 
             self.expense_var = tk.StringVar(value="Total Expenses: ₱0.00")
