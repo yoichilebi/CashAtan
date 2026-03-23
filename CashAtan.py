@@ -888,13 +888,31 @@ class BudgetOverviewPage(tk.Frame):
         # THE FIX: This line tells the canvas to redraw everything whenever it is resized
         self.chart_canvas.bind("<Configure>", lambda event: self.load_data())
 
-        # FOOTER
+
+        # --- FOOTER SECTION (Modern Dark Style) ---
         footer_frame = tk.Frame(self, bg="white")
         footer_frame.pack(fill="x", side="bottom", pady=20)
-        btn_style = {"font": ("Arial", 12, "bold"), "bg": "#d9d9d9", "relief": "solid", "borderwidth": 2, "height": 2, "width": 20}
-        tk.Button(footer_frame, text="Add Income", command=lambda: controller.show_frame("AddIncomePage"), **btn_style).pack(side="left", expand=True)
-        tk.Button(footer_frame, text="Add Expense", command=lambda: controller.show_frame("AddExpensePage"), **btn_style).pack(side="left", expand=True)
-        tk.Button(footer_frame, text="Back to Dashboard", command=lambda: controller.show_frame("DashboardPage"), **btn_style).pack(side="left", expand=True)
+
+        # The "Logout" Style Button Configuration
+        dark_btn_style = {
+            "font": ("Arial", 11, "bold"),
+            "bg": "#333",               # Dark Charcoal
+            "fg": "white",              # White Text
+            "relief": "flat",           # Clean flat look
+            "activebackground": "#555", # Hover color
+            "activeforeground": "white",
+            "height": 2,
+            "width": 22
+        }
+
+        tk.Button(footer_frame, text="ADD INCOME", 
+                  command=lambda: controller.show_frame("AddIncomePage"), **dark_btn_style).pack(side="left", expand=True, padx=5)
+        
+        tk.Button(footer_frame, text="ADD EXPENSE", 
+                  command=lambda: controller.show_frame("AddExpensePage"), **dark_btn_style).pack(side="left", expand=True, padx=5)
+        
+        tk.Button(footer_frame, text="BACK TO DASHBOARD", 
+                  command=lambda: controller.show_frame("DashboardPage"), **dark_btn_style).pack(side="left", expand=True, padx=5)
 
     def load_data(self):
         u_id = getattr(self.controller, 'current_user_id', None)
