@@ -668,7 +668,183 @@ class AddIncomePage(tk.Frame):
             elif field != "Date:": # Keep the date as is for convenience
                 widget.delete(0, tk.END)
 
+# --- 5. DATA TABLE TEMPLATE (VIEW TRANSACTIONS) ---
+class ViewTransactionsPage(tk.Frame):
+    def __init__(self, parent, controller):
+        super().__init__(parent)
+        self.controller = controller
+        self.config(bg="white") 
+        
+        # Header
+        tk.Label(self, text="VIEW TRANSACTIONS", font=("Arial", 26, "bold"), 
+                 bg="white", fg="black").pack(pady=(20, 10))
+        
+        # --- UI UPDATED: FORCED GRID LINES & COLORS ---
+        style = ttk.Style()
+        style.theme_use("clam") 
+        
+        # Header style with borders
+        style.configure("Treeview.Heading", font=("Arial", 12, "bold"), 
+                        background="#d9d9d9", foreground="black", 
+                        borderwidth=1, relief="solid")
+        
+        # Row style with visible grid lines
+        style.configure("Treeview", font=("Arial", 11), rowheight=35, 
+                        background="white", fieldbackground="white", 
+                        borderwidth=1, relief="solid")
+        
+        style.map("Treeview", background=[('selected', '#bcbcbc')])
 
+        # 1. Table Setup - Column "Type" added
+        cols = ("ID", "Type", "Date", "Category", "Amount", "Notes")
+        self.tree = ttk.Treeview(self, columns=cols, show="headings", style="Treeview")
+        
+        # Alternating row colors (Zebra stripes)
+        self.tree.tag_configure('oddrow', background="white")
+        self.tree.tag_configure('evenrow', background="#f2f2f2") 
+
+        # Define Headings
+        self.tree.heading("ID", text="ID")
+        self.tree.heading("Type", text="Type")
+        self.tree.heading("Date", text="Date:")
+        self.tree.heading("Category", text="Category")
+        self.tree.heading("Amount", text="Amount")
+        self.tree.heading("Notes", text="Notes")
+
+        # Column formatting
+        self.tree.column("Type", width=100, anchor="center")
+        self.tree.column("Date", width=120, anchor="center")
+        self.tree.column("Category", width=150, anchor="center")
+        self.tree.column("Amount", width=100, anchor="center")
+        self.tree.column("Notes", width=250, anchor="w")
+
+        # UPDATED: Added "Type" to displaycolumns before "Date"
+        self.tree["displaycolumns"] = ("Type", "Date", "Category", "Amount", "Notes")
+        self.tree.pack(fill="both", expand=True, padx=30, pady=10)
+        
+        # --- FOOTER BUTTONS ---
+        btn_frame = tk.Frame(self, bg="white")
+        btn_frame.pack(pady=30)
+        
+        btn_style = {
+            "font": ("Arial", 11, "bold"),
+            "bg": "#333",       
+            "fg": "white",         
+            "relief": "solid",     
+            "borderwidth": 1,
+            "activebackground": "#555",
+            "activeforeground": "white", 
+            "height": 2
+        }
+        
+        tk.Button(btn_frame, text="Delete Expense", width=20,
+                  command=self.delete_transaction, **btn_style).pack(side="left", padx=10)
+        
+        tk.Button(btn_frame, text="Edit Expense", width=20,
+                  command=self.edit_transaction, **btn_style).pack(side="left", padx=10)
+        
+        tk.Button(btn_frame, text="Back to Dashboard", width=22, 
+                  command=lambda: controller.show_frame("DashboardPage"), **btn_style).pack(side="left", padx=10)
+
+    def load_data(self):
+        """Refreshes the list from the database."""
+        for item in self.tree.get_children():
+            self.tree.delete(item)
+
+        u_id = getattr(self.controller, 'current_user_id', None)
+        if u_id is None: return
+
+        try:
+            with sqlite3.connect("cashatan.db") as conn:
+                cursor = conn.cursor()
+                query = "SELECT transaction_id, type, date, category, amount, notes FROM transactions WHERE user_id = ? ORDER BY date DESC"
+                cursor.execute(query, (u_id,))
+                
+                for i, row in enumerate(cursor.fetchall()):
+                    if i % 2 == 0:
+                        self.tree.insert("", "end", values=row, tags=('evenrow',))
+                    else:
+                        self.tree.insert("", "end", values=row, tags=('oddrow',))
+        except sqlite3.Error as e:
+            messagebox.showerror("Error", f"Could not load data: {e}")
+
+    def delete_transaction(self):
+        selected_item = self.tree.selection()
+        if not selected_item:
+            messagebox.showwarning("Selection", "Please select a row to delete.")
+            return
+
+        confirm = messagebox.askyesno("Confirm", "Are you sure you want to delete this record?")
+        if confirm:
+            t_id = self.tree.item(selected_item)['values'][0]
+            with sqlite3.connect("cashatan.db") as conn:
+                conn.execute("DELETE FROM transactions WHERE transaction_id = ?", (t_id,))
+            self.load_data()
+
+    def edit_transaction(self):
+        """Opens a popup window to edit the selected transaction."""
+        selected_item = self.tree.selection()
+        if not selected_item:
+            messagebox.showwarning("Selection", "Please select a row to edit.")
+            return
+
+        item_data = self.tree.item(selected_item)['values']
+        # Verification: ID is index 0, Type is index 1, Date is index 2, etc.
+        t_id, t_type, t_date, t_cat, t_amt, t_notes = item_data
+
+        edit_win = tk.Toplevel(self)
+        edit_win.title("Edit Transaction")
+        edit_win.geometry("400x450")
+        edit_win.config(bg="white")
+
+        tk.Label(edit_win, text=f"EDITING {t_type.upper()}", font=("Arial", 14, "bold"), 
+                 bg="white").pack(pady=20)
+
+        fields_frame = tk.Frame(edit_win, bg="white")
+        fields_frame.pack(pady=10)
+
+        label_font = ("Arial", 10, "bold")
+
+        tk.Label(fields_frame, text="Date:", bg="white", font=label_font).grid(row=0, column=0, pady=8, padx=5, sticky="e")
+        ent_date = DateEntry(fields_frame, width=20, date_pattern='y-mm-dd')
+        ent_date.set_date(t_date) 
+        ent_date.grid(row=0, column=1, pady=8)
+
+        tk.Label(fields_frame, text="Category/Source:", bg="white", font=label_font).grid(row=1, column=0, pady=8, padx=5, sticky="e")
+        ent_cat = tk.Entry(fields_frame, width=23, relief="solid")
+        ent_cat.insert(0, t_cat) 
+        ent_cat.grid(row=1, column=1, pady=8)
+
+        tk.Label(fields_frame, text="Amount:", bg="white", font=label_font).grid(row=2, column=0, pady=8, padx=5, sticky="e")
+        ent_amt = tk.Entry(fields_frame, width=23, relief="solid")
+        ent_amt.insert(0, t_amt) 
+        ent_amt.grid(row=2, column=1, pady=8)
+
+        tk.Label(fields_frame, text="Notes:", bg="white", font=label_font).grid(row=3, column=0, pady=8, padx=5, sticky="e")
+        ent_notes = tk.Entry(fields_frame, width=23, relief="solid")
+        ent_notes.insert(0, t_notes) 
+        ent_notes.grid(row=3, column=1, pady=8)
+
+        def save_changes():
+            try:
+                new_date = ent_date.get()
+                new_cat = ent_cat.get()
+                new_amt = float(ent_amt.get())
+                new_notes = ent_notes.get()
+
+                with sqlite3.connect("cashatan.db") as conn:
+                    query = "UPDATE transactions SET date=?, category=?, amount=?, notes=? WHERE transaction_id=?"
+                    conn.execute(query, (new_date, new_cat, new_amt, new_notes, t_id))
+                
+                messagebox.showinfo("Success", "Transaction updated!")
+                edit_win.destroy()
+                self.load_data() 
+            except ValueError:
+                messagebox.showerror("Error", "Amount must be a number.")
+
+        tk.Button(edit_win, text="SAVE CHANGES", width=20, 
+                  font=("Arial", 11, "bold"), bg="#d9d9d9", relief="solid", 
+                  borderwidth=1, command=save_changes).pack(pady=30)
 
 
 
