@@ -689,27 +689,27 @@ class ViewTransactionsPage(tk.Frame):
         style = ttk.Style()
         style.theme_use("clam") 
         
-        # Configure Header with borders
+        # Header style with borders
         style.configure("Treeview.Heading", font=("Arial", 12, "bold"), 
                         background="#d9d9d9", foreground="black", 
                         borderwidth=1, relief="solid")
         
-        # Configure Rows with visible borders (Grid Lines)
+        # Row style with visible grid lines
         style.configure("Treeview", font=("Arial", 11), rowheight=35, 
                         background="white", fieldbackground="white", 
                         borderwidth=1, relief="solid")
         
-        # This mapping forces the lines to show up between cells
         style.map("Treeview", background=[('selected', '#bcbcbc')])
 
+        # 1. Table Setup
         cols = ("ID", "Type", "Date", "Category", "Amount", "Notes")
         self.tree = ttk.Treeview(self, columns=cols, show="headings", style="Treeview")
         
-        # Adding Tags for alternating row colors (Zebra stripes)
+        # Alternating row colors (Zebra stripes)
         self.tree.tag_configure('oddrow', background="white")
-        self.tree.tag_configure('evenrow', background="#f2f2f2") # Very light grey
+        self.tree.tag_configure('evenrow', background="#f2f2f2") 
 
-        # Table Headings
+        # Define Headings
         self.tree.heading("ID", text="ID")
         self.tree.heading("Type", text="Type")
         self.tree.heading("Date", text="Date:")
@@ -718,11 +718,13 @@ class ViewTransactionsPage(tk.Frame):
         self.tree.heading("Notes", text="Notes")
 
         # Column formatting
-        for col in cols:
-            self.tree.column(col, width=150, anchor="center")
+        self.tree.column("Type", width=100, anchor="center")
+        self.tree.column("Date", width=120, anchor="center")
+        self.tree.column("Category", width=150, anchor="center")
+        self.tree.column("Amount", width=100, anchor="center")
+        self.tree.column("Notes", width=250, anchor="w")
 
-        # Display columns (Hiding ID and Type)
-        self.tree["displaycolumns"] = ("Date", "Category", "Amount", "Notes")
+        self.tree["displaycolumns"] = ("Type", "Date", "Category", "Amount", "Notes")
         self.tree.pack(fill="both", expand=True, padx=30, pady=10)
         
         # --- FOOTER BUTTONS ---
@@ -735,8 +737,8 @@ class ViewTransactionsPage(tk.Frame):
             "fg": "white",         
             "relief": "solid",     
             "borderwidth": 1,
-            "activebackground": "#555", 
-            "activeforeground": "white",
+            "activebackground": "#555",
+            "activeforeground": "white", 
             "height": 2
         }
         
@@ -764,7 +766,6 @@ class ViewTransactionsPage(tk.Frame):
                 cursor.execute(query, (u_id,))
                 
                 for i, row in enumerate(cursor.fetchall()):
-                    # Apply alternating row colors using tags
                     if i % 2 == 0:
                         self.tree.insert("", "end", values=row, tags=('evenrow',))
                     else:
@@ -808,21 +809,28 @@ class ViewTransactionsPage(tk.Frame):
 
         label_font = ("Arial", 10, "bold")
 
+        # Date Field
         tk.Label(fields_frame, text="Date:", bg="white", font=label_font).grid(row=0, column=0, pady=8, padx=5, sticky="e")
         ent_date = DateEntry(fields_frame, width=20, date_pattern='y-mm-dd')
         ent_date.set_date(t_date) 
         ent_date.grid(row=0, column=1, pady=8)
 
+        # UPDATED: Category Field now uses a Combobox
         tk.Label(fields_frame, text="Category/Source:", bg="white", font=label_font).grid(row=1, column=0, pady=8, padx=5, sticky="e")
-        ent_cat = tk.Entry(fields_frame, width=23, relief="solid")
-        ent_cat.insert(0, t_cat) 
+        
+        # Define your category list here
+        categories = ["Food", "Transport", "Bills", "Allowance", "Groceries", "Salary", "Others"]
+        ent_cat = ttk.Combobox(fields_frame, values=categories, width=21, state="readonly")
+        ent_cat.set(t_cat) # Pre-fill with existing category
         ent_cat.grid(row=1, column=1, pady=8)
 
+        # Amount Field
         tk.Label(fields_frame, text="Amount:", bg="white", font=label_font).grid(row=2, column=0, pady=8, padx=5, sticky="e")
         ent_amt = tk.Entry(fields_frame, width=23, relief="solid")
         ent_amt.insert(0, t_amt) 
         ent_amt.grid(row=2, column=1, pady=8)
 
+        # Notes Field
         tk.Label(fields_frame, text="Notes:", bg="white", font=label_font).grid(row=3, column=0, pady=8, padx=5, sticky="e")
         ent_notes = tk.Entry(fields_frame, width=23, relief="solid")
         ent_notes.insert(0, t_notes) 
