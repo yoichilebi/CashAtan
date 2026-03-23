@@ -329,13 +329,13 @@ class DashboardPage(tk.Frame):
                     command=self.upload_photo).grid(row=3, column=1, pady=5, padx=10, sticky="w")
 
 
-            # Bottom section: Financial Stats
+            # --- BOTTOM SECTION: FINANCIAL STATS ---
             stats_frame = tk.Frame(profile_frame)
-            
             stats_frame.pack(fill="x", pady=20, anchor="w")
 
             self.expense_var = tk.StringVar(value="Total Expenses: ₱0.00")
-            self.savings_var = tk.StringVar(value="Total Savings: ₱0.00")
+            # Changed the label text here to "Current Savings"
+            self.savings_var = tk.StringVar(value="Current Savings: ₱0.00")
 
             tk.Label(stats_frame, textvariable=self.expense_var, bg="#ccc", 
                     width=45, anchor="w", padx=10, font=("Arial", 10, "bold")).pack(pady=5, anchor="w")           
@@ -362,87 +362,57 @@ class DashboardPage(tk.Frame):
                 messagebox.showerror("Database Error", f"Could not save image path: {e}")
 
     def load_data(self):
-        """Fetches profile info and financial totals."""
+        """Fetches profile info and actual financial totals from the ledger."""
         u_id = getattr(self.controller, 'current_user_id', None)
         if u_id is None: return
 
         try:
-            # Using 'connection' as requested
             with sqlite3.connect("cashatan.db") as connection:
                 cursor = connection.cursor()
                 
-                # 1. Get User Details
+                # 1. Load Profile Details (Username & Photo)
                 cursor.execute("SELECT username, profile_pic FROM users WHERE user_id = ?", (u_id,))
                 user_info = cursor.fetchone()
-                
                 if user_info:
                     self.username_var.set(user_info[0])
-                    # Load Image from the saved path
                     if user_info[1]:
                         try:
                             img = Image.open(user_info[1])
-                            img = img.resize((120, 120), Image.Resampling.LANCZOS)
+                            # Use 150x150 for the square look we set earlier
+                            img = img.resize((150, 150), Image.Resampling.LANCZOS)
                             photo = ImageTk.PhotoImage(img)
-                            self.img_label.config(image=photo, text="")
+                            self.img_label.config(image=photo)
                             self.img_label.image = photo 
-                        except Exception:
-                            self.img_label.config(image='', text="Image Error")
+                        except:
+                            pass
 
-                # 2. Get Budget Goal (From budgets table)
+                # 2. Get Budget Goal (Show it in the entry box)
                 cursor.execute("SELECT savings_goal FROM budgets WHERE user_id = ?", (u_id,))
                 goal_result = cursor.fetchone()
-                
-                # Clear the box and put the existing goal in it
                 self.goal_entry.delete(0, tk.END)
                 if goal_result:
                     self.goal_entry.insert(0, f"{goal_result[0]:.2f}")
                 else:
                     self.goal_entry.insert(0, "0.00")
 
-                # 3. Calculate Totals (From transactions table)
+                # 3. ACTUAL MONEY LOGIC (Total Income - Total Expense)
+                # We ignore the 'monthly_income' field from the budgets table here.
                 cursor.execute("SELECT type, SUM(amount) FROM transactions WHERE user_id = ? GROUP BY type", (u_id,))
                 totals = dict(cursor.fetchall())
-                income = totals.get('Income', 0.0)
-                expense = totals.get('Expense', 0.0)
-                savings = income - expense
+                
+                actual_income = totals.get('Income', 0.0)
+                actual_expense = totals.get('Expense', 0.0)
+                
+                # Current Savings is only what you actually have.
+                current_savings = actual_income - actual_expense
 
-                self.expense_var.set(f"Total Expenses: ₱{expense:,.2f}")
-                self.savings_var.set(f"Total Savings: ₱{savings:,.2f}")
+                self.expense_var.set(f"Total Expenses: ₱{actual_expense:,.2f}")
+                self.savings_var.set(f"Current Savings: ₱{current_savings:,.2f}")
 
         except Exception as e:
-            # This helps catch that 'no such column' error if the DB isn't updated
             print(f"Error loading dashboard: {e}")
         
-        def save_goal(self):
-            """Saves the typed budget goal into the budgets table."""
-            u_id = getattr(self.controller, 'current_user_id', None)
-            new_goal = self.goal_entry.get()
-
-            if not u_id:
-                messagebox.showerror("Error", "User not found.")
-                return
-
-            try:
-                # Convert input to a float number
-                goal_value = float(new_goal)
-                
-                with sqlite3.connect("cashatan.db") as connection:
-                    cursor = connection.cursor()
-                    # 'INSERT OR REPLACE' updates the row if the user_id already exists
-                    query = """INSERT INTO budgets (user_id, savings_goal) 
-                            VALUES (?, ?) 
-                            ON CONFLICT(user_id) DO UPDATE SET savings_goal = excluded.savings_goal"""
-                    cursor.execute(query, (u_id, goal_value))
-                    connection.commit()
-                
-                messagebox.showinfo("Success", f"Budget Goal set to ₱{goal_value:,.2f}")
-                self.load_data() # Refresh the profile stats
-
-            except ValueError:
-                messagebox.showerror("Invalid Input", "Please enter a valid number for your goal.")
-            except sqlite3.Error as e:
-                messagebox.showerror("Database Error", f"Error saving goal: {e}")
-
+        
     def save_goal(self):
         """Saves the typed budget goal into the budgets table."""
         # 1. Get the current user ID and the typed goal
@@ -479,6 +449,7 @@ class DashboardPage(tk.Frame):
             messagebox.showerror("Invalid Input", "Please enter a valid number for your goal.")
         except sqlite3.Error as e:
             messagebox.showerror("Database Error", f"Error saving goal: {e}")
+
 # --- 4. FORM TEMPLATE (ADD EXPENSE/INCOME) [cite: 89, 101] ---
 class AddExpensePage(tk.Frame):
     def __init__(self, parent, controller):
@@ -812,15 +783,247 @@ class ViewTransactionsPage(tk.Frame):
 class BudgetOverviewPage(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent)
-        tk.Label(self, text="BUDGET OVERVIEW", font=("Arial", 18, "bold")).pack(pady=10) # [cite: 118]
-        
-        # Labels for summary metrics [cite: 124, 126, 129, 131]
-        metrics = ["Monthly Income:", "Savings Goal:", "Total Expenses:", "Remaining Budget:"]
-        for m in metrics:
-            tk.Label(self, text=m, font=("Arial", 12)).pack(anchor="w", padx=50)
-            
-        tk.Button(self, text="Back to Dashboard", command=lambda: controller.show_frame("DashboardPage")).pack(pady=20) # [cite: 142]
+        self.controller = controller
+        self.config(bg="white")
 
+        # --- HEADER SECTION (Keep as is) ---
+        header_frame = tk.Frame(self, bg="white")
+        header_frame.pack(fill="x", padx=20, pady=10)
+
+        user_info = tk.Frame(header_frame, bg="white")
+        user_info.pack(side="left")
+        
+        self.canvas_user = tk.Canvas(user_info, width=40, height=40, bg="white", highlightthickness=0)
+        self.canvas_user.pack(side="left")
+        
+        self.lbl_username = tk.Label(user_info, text="username", font=("Arial", 14), bg="white")
+        self.lbl_username.pack(side="left", padx=10)
+
+        tk.Label(header_frame, text="BUDGET OVERVIEW", font=("Arial", 28, "bold"), bg="white").place(relx=0.5, anchor="n")
+        tk.Label(header_frame, text=date.today().strftime("%m/%d/%Y"), font=("Arial", 14), bg="white").pack(side="right")
+
+        tk.Frame(self, height=2, bg="black").pack(fill="x", padx=20)
+
+        # --- MAIN CONTENT AREA (The Grid Fix) ---
+        content_frame = tk.Frame(self, bg="white")
+        content_frame.pack(fill="both", expand=True, padx=20, pady=10)
+        
+        # Configure columns to be equal width
+        content_frame.columnconfigure(0, weight=1)
+        content_frame.columnconfigure(1, weight=1)
+
+        # ROW 0, COL 0: Monthly Stats Box
+        stats_box = tk.Frame(content_frame, bg="#d9d9d9", padx=15, pady=15, relief="solid", borderwidth=1)
+        stats_box.grid(row=0, column=0, sticky="nsew", padx=(0, 10), pady=(0, 10))
+        
+        self.lbl_monthly_inc = tk.Label(stats_box, text="Monthly Income: ₱0", font=("Arial", 11, "bold"), bg="white", relief="solid", borderwidth=1, anchor="w", padx=5)
+        self.lbl_monthly_inc.pack(fill="x", pady=2)
+        self.lbl_savings_goal = tk.Label(stats_box, text="Savings Goal: ₱0", font=("Arial", 11, "bold"), bg="white", relief="solid", borderwidth=1, anchor="w", padx=5)
+        self.lbl_savings_goal.pack(fill="x", pady=2)
+        self.lbl_avail_exp = tk.Label(stats_box, text="Available for Expenses: ₱0", font=("Arial", 11, "bold"), bg="#b3b3b3", relief="solid", borderwidth=1, anchor="w", padx=5)
+        self.lbl_avail_exp.pack(fill="x", pady=2)
+
+        # ROW 0, COL 1: Expense Summary & Savings Progress (Aligned to Stats Box)
+        top_right_container = tk.Frame(content_frame, bg="white")
+        top_right_container.grid(row=0, column=1, sticky="nsew", pady=(0, 10))
+        top_right_container.columnconfigure(0, weight=1)
+        top_right_container.columnconfigure(1, weight=1)
+
+        summary_box = tk.Frame(top_right_container, bg="white", relief="solid", borderwidth=1, padx=10, pady=5)
+        summary_box.grid(row=0, column=0, sticky="nsew", padx=(0, 5))
+        tk.Label(summary_box, text="Expense Summary", font=("Arial", 11, "bold"), bg="#d9d9d9", relief="solid", borderwidth=1).pack(fill="x", pady=(0, 5))
+        self.lbl_total_exp = tk.Label(summary_box, text="Total Expenses: ₱0", bg="white", font=("Arial", 10, "bold"), anchor="w")
+        self.lbl_total_exp.pack(fill="x", pady=5)
+        self.lbl_remain_bud = tk.Label(summary_box, text="Remaining Budget: ₱0", bg="white", font=("Arial", 10, "bold"), anchor="w")
+        self.lbl_remain_bud.pack(fill="x", pady=5)
+
+        progress_box = tk.Frame(top_right_container, bg="white", relief="solid", borderwidth=1, padx=10, pady=5)
+        progress_box.grid(row=0, column=1, sticky="nsew", padx=(5, 0))
+        tk.Label(progress_box, text="Savings Progress", font=("Arial", 11, "bold"), bg="#d9d9d9", relief="solid", borderwidth=1).pack(fill="x", pady=(0, 5))
+        self.gauge_canvas = tk.Canvas(progress_box, width=80, height=80, bg="white", highlightthickness=0)
+        self.gauge_canvas.pack(side="left")
+        self.lbl_progress_text = tk.Label(progress_box, text="0% of Goal\nAchieved", font=("Arial", 10, "bold"), bg="white", justify="left")
+        self.lbl_progress_text.pack(side="left", padx=5)
+
+        # ROW 1, COL 0: The Breakdowns (Stacked)
+        breakdown_container = tk.Frame(content_frame, bg="white")
+        breakdown_container.grid(row=1, column=0, sticky="nsew", padx=(0, 10))
+
+        self.expense_box = tk.Frame(breakdown_container, bg="white", relief="solid", borderwidth=1)
+        self.expense_box.pack(fill="both", expand=True, pady=(0, 5))
+        tk.Label(self.expense_box, text="Expense Breakdown", font=("Arial", 11, "bold"), bg="#d9d9d9", relief="solid", borderwidth=1).pack(fill="x")
+        self.expense_rows = tk.Frame(self.expense_box, bg="white")
+        self.expense_rows.pack(fill="both", expand=True)
+
+        self.income_box = tk.Frame(breakdown_container, bg="white", relief="solid", borderwidth=1)
+        self.income_box.pack(fill="both", expand=True, pady=(5, 0))
+        tk.Label(self.income_box, text="Income Breakdown", font=("Arial", 11, "bold"), bg="#d9d9d9", relief="solid", borderwidth=1).pack(fill="x")
+        self.income_rows = tk.Frame(self.income_box, bg="white")
+        self.income_rows.pack(fill="both", expand=True)
+
+        # ROW 1, COL 1: Charts Area (Aligned to match total height of breakdowns)
+        charts_box = tk.Frame(content_frame, bg="#d9d9d9", padx=10, pady=10, relief="solid", borderwidth=1)
+        charts_box.grid(row=1, column=1, sticky="nsew") # sticky="nsew" makes it span the height!
+        
+        chart_titles = tk.Frame(charts_box, bg="#d9d9d9")
+        chart_titles.pack(fill="x")
+        tk.Label(chart_titles, text="Expenses Over Time", font=("Arial", 10, "bold"), bg="#d9d9d9").pack(side="left", padx=20)
+        tk.Label(chart_titles, text="Expenses Categories", font=("Arial", 10, "bold"), bg="#d9d9d9").pack(side="right", padx=40)
+
+        self.chart_canvas = tk.Canvas(charts_box, bg="#d9d9d9", highlightthickness=0)
+        self.chart_canvas.pack(fill="both", expand=True)
+
+        # --- FOOTER (Keep as is) ---
+        footer_frame = tk.Frame(self, bg="white")
+        footer_frame.pack(fill="x", side="bottom", pady=20)
+        btn_style = {"font": ("Arial", 12, "bold"), "bg": "#d9d9d9", "relief": "solid", "borderwidth": 2, "height": 2, "width": 20}
+        tk.Button(footer_frame, text="Add Income", command=lambda: controller.show_frame("AddIncomePage"), **btn_style).pack(side="left", expand=True)
+        tk.Button(footer_frame, text="Add Expense", command=lambda: controller.show_frame("AddExpensePage"), **btn_style).pack(side="left", expand=True)
+        tk.Button(footer_frame, text="Back to Dashboard", command=lambda: controller.show_frame("DashboardPage"), **btn_style).pack(side="left", expand=True)
+
+    def load_data(self):
+        u_id = getattr(self.controller, 'current_user_id', None)
+        if not u_id: return
+
+        try:
+            with sqlite3.connect("cashatan.db") as connection:
+                cursor = connection.cursor()
+                
+                # 1. PROFILE & HEADER
+                cursor.execute("SELECT username, profile_pic FROM users WHERE user_id=?", (u_id,))
+                user = cursor.fetchone()
+                if user:
+                    self.lbl_username.config(text=user[0])
+                    self.canvas_user.delete("all")
+                    if user[1]:
+                        try:
+                            img = Image.open(user[1]).resize((30, 30), Image.Resampling.LANCZOS)
+                            self.profile_photo = ImageTk.PhotoImage(img)
+                            self.canvas_user.create_image(20, 20, image=self.profile_photo)
+                        except:
+                            self.canvas_user.create_oval(5, 5, 35, 35, fill="black")
+                    else:
+                        self.canvas_user.create_oval(5, 5, 35, 35, fill="black")
+
+                # 2. FINANCIAL CALCULATIONS
+                cursor.execute("SELECT savings_goal FROM budgets WHERE user_id=?", (u_id,))
+                goal_data = cursor.fetchone()
+                goal = goal_data[0] if goal_data else 0.0
+                
+                cursor.execute("SELECT type, SUM(amount) FROM transactions WHERE user_id=? GROUP BY type", (u_id,))
+                totals = dict(cursor.fetchall())
+                total_income = totals.get('Income', 0.0)
+                total_expenses = totals.get('Expense', 0.0)
+
+                avail_for_exp = total_income - total_expenses
+                progress_pct = (avail_for_exp / goal * 100) if goal > 0 else 0
+                progress_pct = max(0, min(progress_pct, 100))
+
+                # Update Labels
+                self.lbl_monthly_inc.config(text=f"Total Monthly Income: ₱{total_income:,.2f}")
+                self.lbl_savings_goal.config(text=f"Monthly Savings Goal: ₱{goal:,.2f}")
+                self.lbl_avail_exp.config(text=f"Available for Expenses (Savings): ₱{avail_for_exp:,.2f}")
+                self.lbl_total_exp.config(text=f"Total Expenses: ₱{total_expenses:,.2f}")
+                self.lbl_remain_bud.config(text=f"Remaining Budget (Savings): ₱{avail_for_exp:,.2f}")
+
+                # 3. BREAKDOWNS (Expense & Income)
+                # Expense
+                for w in self.expense_rows.winfo_children(): w.destroy()
+                cursor.execute("SELECT category, SUM(amount) FROM transactions WHERE user_id=? AND type='Expense' GROUP BY category", (u_id,))
+                exp_cats = cursor.fetchall()
+                for cat, amt in exp_cats:
+                    row = tk.Frame(self.expense_rows, bg="white")
+                    row.pack(fill="x", padx=10, pady=2)
+                    tk.Label(row, text=cat, bg="white").pack(side="left")
+                    tk.Label(row, text=f"₱{amt:,.0f}", bg="white", font=("Arial", 10, "bold")).pack(side="right")
+
+                # Income
+                for w in self.income_rows.winfo_children(): w.destroy()
+                cursor.execute("SELECT category, SUM(amount) FROM transactions WHERE user_id=? AND type='Income' GROUP BY category", (u_id,))
+                for src, amt in cursor.fetchall():
+                    row = tk.Frame(self.income_rows, bg="white")
+                    row.pack(fill="x", padx=10, pady=2)
+                    tk.Label(row, text=src, bg="white").pack(side="left")
+                    tk.Label(row, text=f"₱{amt:,.0f}", bg="white", font=("Arial", 10, "bold")).pack(side="right")
+
+                # 4. PROGRESS GAUGE
+                self.gauge_canvas.delete("all")
+                self.gauge_canvas.create_oval(10, 10, 70, 70, outline="#d9d9d9", width=4)
+                extent = -(progress_pct / 100) * 359.9
+                self.gauge_canvas.create_arc(10, 10, 70, 70, start=90, extent=extent, outline="black", width=4, style="arc")
+                self.gauge_canvas.create_text(40, 40, text=f"{int(progress_pct)}%", font=("Arial", 10, "bold"))
+                self.lbl_progress_text.config(text=f"{int(progress_pct)}% of Goal\nAchieved")
+
+                # 5. CHARTS (Pie & Line with Labels and Legend)
+                self.chart_canvas.delete("all")
+                
+                # --- PIE CHART & LEGEND ---
+                if total_expenses > 0:
+                    start_ang = 90
+                    colors = ["#333", "#555", "#777", "#999", "#bbb", "#ddd"]
+                    
+                    for i, (cat, amt) in enumerate(exp_cats):
+                        # 1. Calculate the slice extent
+                        extent = -(amt / total_expenses) * 359.9
+                        
+                        # 2. Calculate the percentage for the legend
+                        percentage = (amt / total_expenses) * 100
+                        
+                        # Draw Pie Slice
+                        self.chart_canvas.create_arc(300, 15, 400, 115, 
+                                                     start=start_ang, extent=extent, 
+                                                     fill=colors[i % len(colors)], outline="white")
+                        
+                        # --- UPDATED LEGEND WITH PERCENTAGE ---
+                        lx = 300 
+                        ly = 140 + (i * 20) 
+                        
+                        # Color Square
+                        self.chart_canvas.create_rectangle(lx, ly, lx+12, ly+12, 
+                                                           fill=colors[i % len(colors)], outline="black")
+                        
+                        # Category Text: Now includes the Peso amount and the Percentage
+                        # Format: Category: ₱449 (68.5%)
+                        legend_text = f"{cat}: ₱{amt:,.0f} ({percentage:.1f}%)"
+                        
+                        self.chart_canvas.create_text(lx + 20, ly + 6, text=legend_text, 
+                                                      font=("Arial", 7, "bold"), anchor="w")
+                        
+                        start_ang += extent
+
+                # --- LINE CHART & X-AXIS LABELS ---
+                # We pull dates AND amounts for the last 5 transactions
+                cursor.execute("""SELECT date, amount FROM transactions 
+                                  WHERE user_id=? AND type='Expense' 
+                                  ORDER BY date DESC LIMIT 5""", (u_id,))
+                data_points = cursor.fetchall()[::-1] # Reverse to chronological
+                
+                if data_points:
+                    max_v = max(float(d[1]) for d in data_points) if max(float(d[1]) for d in data_points) > 0 else 1
+                    pts = []
+                    
+                    for i, (t_date, val) in enumerate(data_points):
+                        x = 25 + (i * 30)
+                        y = 115 - (float(val) / max_v * 85)
+                        pts.extend([x, y])
+                        
+                        # --- DRAW X-AXIS DATE LABELS ---
+                        # We only show the last 5 chars of the date (e.g., '03-23') to save space
+                        short_date = t_date[-5:] 
+                        self.chart_canvas.create_text(x, 130, text=short_date, 
+                                                      font=("Arial", 7, "bold"), angle=45)
+
+                    if len(pts) > 2:
+                        self.chart_canvas.create_line(pts, width=2, fill="black", smooth=True)
+                        for j in range(0, len(pts), 2):
+                            self.chart_canvas.create_oval(pts[j]-2, pts[j+1]-2, pts[j]+2, pts[j+1]+2, fill="black")
+                
+                # Draw the Chart Axis
+                self.chart_canvas.create_line(20, 120, 160, 120, width=1) # X-axis
+                self.chart_canvas.create_line(20, 20, 20, 120, width=1)   # Y-axis
+
+        except Exception as e:
+            print(f"Error updating Overview: {e}")
 
 # ==========================================
 # 4. START THE APP
