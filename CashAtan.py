@@ -370,20 +370,22 @@ class DashboardPage(tk.Frame):
             with sqlite3.connect("cashatan.db") as connection:
                 cursor = connection.cursor()
                 
-                # 1. Load Profile Details (Username & Photo)
+                # 1. Load Profile Details
                 cursor.execute("SELECT username, profile_pic FROM users WHERE user_id = ?", (u_id,))
                 user_info = cursor.fetchone()
+                
                 if user_info:
                     self.username_var.set(user_info[0])
-                    if user_info[1]:
+                    # Only try to load a custom photo if the path exists
+                    if user_info[1]: 
                         try:
                             img = Image.open(user_info[1])
-                            # Use 150x150 for the square look we set earlier
                             img = img.resize((150, 150), Image.Resampling.LANCZOS)
                             photo = ImageTk.PhotoImage(img)
                             self.img_label.config(image=photo)
-                            self.img_label.image = photo 
-                        except:
+                            self.img_label.image = photo # Update reference to the new photo
+                        except Exception:
+                            # If file is missing, keep the placeholder
                             pass
 
                 # 2. Get Budget Goal (Show it in the entry box)
@@ -884,26 +886,31 @@ class BudgetOverviewPage(tk.Frame):
     def load_data(self):
         u_id = getattr(self.controller, 'current_user_id', None)
         if not u_id: return
+ 
+        # 1. PROFILE & HEADER
+        # --- THE FIX: CLEAR CANVAS & RESET DEFAULT ---
+        self.canvas_user.delete("all")
+        # Pre-draw the default black circle
+        self.canvas_user.create_oval(5, 5, 35, 35, fill="black")
 
         try:
             with sqlite3.connect("cashatan.db") as connection:
                 cursor = connection.cursor()
                 
-                # 1. PROFILE & HEADER
+                # 1. Header & Profile
                 cursor.execute("SELECT username, profile_pic FROM users WHERE user_id=?", (u_id,))
                 user = cursor.fetchone()
+                
                 if user:
                     self.lbl_username.config(text=user[0])
-                    self.canvas_user.delete("all")
-                    if user[1]:
+                    if user[1]: # If they have a photo path
                         try:
                             img = Image.open(user[1]).resize((30, 30), Image.Resampling.LANCZOS)
                             self.profile_photo = ImageTk.PhotoImage(img)
+                            # Draw the image OVER the black circle
                             self.canvas_user.create_image(20, 20, image=self.profile_photo)
                         except:
-                            self.canvas_user.create_oval(5, 5, 35, 35, fill="black")
-                    else:
-                        self.canvas_user.create_oval(5, 5, 35, 35, fill="black")
+                            pass
 
                 # 2. FINANCIAL CALCULATIONS
                 cursor.execute("SELECT savings_goal FROM budgets WHERE user_id=?", (u_id,))
