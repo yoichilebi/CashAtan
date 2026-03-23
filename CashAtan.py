@@ -125,53 +125,63 @@ class LoginPage(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent)
         self.controller = controller
-        
-        tk.Label(self, text="LOGIN / SIGN UP", font=("Arial", 18, "bold")).pack(pady=20)
-        
-        form_frame = tk.Frame(self)
-        form_frame.pack(pady=10)
-        
-        # Variable to track if password should be shown
+        self.configure(bg="white") # Match Budget Overview background
+
+        # --- HEADER SECTION ---
+        header_frame = tk.Frame(self, bg="white")
+        header_frame.pack(fill="x", padx=20, pady=(20, 10))
+
+        tk.Label(header_frame, text="LOGIN / SIGN UP", font=("Arial", 24, "bold"), bg="white").pack()
+        # The iconic black divider line
+        tk.Frame(self, height=2, bg="black").pack(fill="x", padx=20, pady=(0, 40))
+
+        # --- FORM SECTION ---
+        form_container = tk.Frame(self, bg="white")
+        form_container.pack(expand=True)
+
         self.var_show_pass = tk.BooleanVar(value=False)
 
-        #Username
-        tk.Label(form_frame, text="Username:").grid(row=0, column=0, sticky="e", pady=5)
-        self.username_entry = tk.Entry(form_frame) # <--- Variable name is now 'self.username_entry'
-        self.username_entry.grid(row=0, column=1, padx=10, pady=5)
-        
-        #Password
-        tk.Label(form_frame, text="Password:").grid(row=1, column=0, sticky="e", pady=5)
-        self.password_entry = tk.Entry(form_frame, show="*") # <--- Variable name is now 'self.password_entry'
-        self.password_entry.grid(row=1, column=1, padx=10, pady=5)
-        
-        #Show Password Checkbox
-        tk.Checkbutton(form_frame, text="Show Password", variable=self.var_show_pass, 
-                       command=self.toggle_password).grid(row=2, column=1, sticky="w")
-        
-        # Buttons
-        btn_frame = tk.Frame(self)
-        btn_frame.pack(pady=(0, 20))
-        tk.Button(btn_frame, text="Login", width=15, 
-                  command=lambda: self.login_action()).pack(side="left", padx=6)
-        tk.Button(btn_frame, text="Sign Up", width=15, 
-                  command=lambda: controller.show_frame("SignUpPage")).pack(side="left", padx=6)
+        # Labels and Entries with consistent styling
+        label_font = ("Arial", 14)
+        tk.Label(form_container, text="Username:", font=label_font, bg="white").grid(row=0, column=0, sticky="e", pady=10, padx=10)
+        self.username_entry = tk.Entry(form_container, font=("Arial", 12), width=30, relief="solid", borderwidth=1)
+        self.username_entry.grid(row=0, column=1, pady=10)
 
-    #for toggling password visibility
+        tk.Label(form_container, text="Password:", font=label_font, bg="white").grid(row=1, column=0, sticky="e", pady=10, padx=10)
+        self.password_entry = tk.Entry(form_container, font=("Arial", 12), width=30, show="*", relief="solid", borderwidth=1)
+        self.password_entry.grid(row=1, column=1, pady=10)
+
+        tk.Checkbutton(form_container, text="Show Password", variable=self.var_show_pass, 
+                       bg="white", font=("Arial", 10), command=self.toggle_password).grid(row=2, column=1, sticky="w")
+
+
+        # --- BUTTON SECTION ---
+        btn_frame = tk.Frame(self, bg="white")
+        btn_frame.pack(side="bottom", pady=50)
+
+        # THE "LOGOUT STYLE" BUTTON CONFIGURATION
+        dark_btn_style = {
+            "font": ("Arial", 11, "bold"),
+            "bg": "#333",       # Dark Charcoal
+            "fg": "white",      # White Text
+            "relief": "flat",   # Clean flat look
+            "activebackground": "#555", # Slight highlight when clicked
+            "activeforeground": "white",
+            "width": 18,
+            "height": 2
+        }
+
+        tk.Button(btn_frame, text="LOGIN", command=self.login_action, **dark_btn_style).pack(side="left", padx=10)
+        tk.Button(btn_frame, text="SIGN UP", command=lambda: controller.show_frame("SignUpPage"), **dark_btn_style).pack(side="left", padx=10)
+
     def toggle_password(self):
-        """Toggles the 'show' property of the password entry"""
-        if self.var_show_pass.get():
-            self.password_entry.config(show="") # Show text
-        else:
-            self.password_entry.config(show="*") # Mask text
+        self.password_entry.config(show="" if self.var_show_pass.get() else "*")
 
-    #database interaction for login
     def login_action(self):
         user = authenticate_user(self.username_entry.get(), self.password_entry.get())
         if user:
-            # user[0] is the user_id from your database
             self.controller.current_user_id = user[0] 
-            
-            messagebox.showinfo("Login Success", f"Welcome back, {user[3]}!") # user[3] is username
+            messagebox.showinfo("Login Success", f"Welcome back, {user[3]}!")
             self.controller.show_frame("DashboardPage")
         else:
             messagebox.showerror("Error", "Invalid username or password.")
@@ -182,55 +192,58 @@ class SignUpPage(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent)
         self.controller = controller
-        
-        tk.Label(self, text="SIGN UP", font=("Arial", 18, "bold")).pack(pady=20) # [cite: 54]
-        
+        self.configure(bg="white")
 
-        # Fields: Full Name, Email, Username, Password [cite: 55-58]
-        form_frame = tk.Frame(self)
-        form_frame.pack(pady=10)
+        # --- HEADER SECTION ---
+        header_frame = tk.Frame(self, bg="white")
+        header_frame.pack(fill="x", padx=20, pady=(20, 10))
+
+        tk.Label(header_frame, text="SIGN UP", font=("Arial", 24, "bold"), bg="white").pack()
+        tk.Frame(self, height=2, bg="black").pack(fill="x", padx=20, pady=(0, 40))
+
+        # --- FORM SECTION ---
+        form_container = tk.Frame(self, bg="white")
+        form_container.pack(expand=True)
 
         self.entries = {}
         fields = [("Full Name:", "full_name"), ("Email:", "email"), 
                   ("Username:", "username"), ("Password:", "password")]
         
-        # 2. Loop through and use .grid() instead of .pack()
-        # Inside SignUpPage __init__
-        self.var_show_pass = tk.BooleanVar(value=False) # Tracks the checkbox state
+        self.var_show_pass = tk.BooleanVar(value=False)
 
         for i, (label_text, key_name) in enumerate(fields):
-            tk.Label(form_frame, text=label_text).grid(row=i, column=0, sticky="e", pady=5)
+            tk.Label(form_container, text=label_text, font=("Arial", 12), bg="white").grid(row=i, column=0, sticky="e", pady=8, padx=10)
             
             show_char = "*" if "Password" in label_text else None
-            entry_widget = tk.Entry(form_frame, width=25, show=show_char)
-            entry_widget.grid(row=i, column=1, pady=5, padx=5)
+            entry_widget = tk.Entry(form_container, font=("Arial", 12), width=30, show=show_char, relief="solid", borderwidth=1)
+            entry_widget.grid(row=i, column=1, pady=8)
             self.entries[key_name] = entry_widget 
 
-        # 3. SAVE the widget so signup_action can find it
-            self.entries[key_name] = entry_widget
+        tk.Checkbutton(form_container, text="Show Password", variable=self.var_show_pass, 
+                       bg="white", font=("Arial", 10), command=self.toggle_password).grid(row=len(fields), column=1, sticky="w")
 
-        # Add the "Show Password" checkbox right after the loop
-        tk.Checkbutton(form_frame, text="Show Password", variable=self.var_show_pass, 
-                       command=self.toggle_password).grid(row=len(fields), column=1, sticky="w")
-            
-        btn_frame = tk.Frame(self)
-        btn_frame.pack(pady=(0, 20))
-        tk.Button(btn_frame, text="Register", width=15, 
-                  command=lambda: self.signup_action()).pack(side="left", padx=6)
-        tk.Button(btn_frame, text="Back to Login", width=15, 
-                  command=lambda: controller.show_frame("LoginPage")).pack(side="left", padx=6)
 
-    #showing password
+       # --- BUTTON SECTION ---
+        btn_frame = tk.Frame(self, bg="white")
+        btn_frame.pack(side="bottom", pady=50)
+
+        # REUSING THE DARK STYLE
+        dark_btn_style = {
+            "font": ("Arial", 11, "bold"),
+            "bg": "#333",
+            "fg": "white",
+            "relief": "flat",
+            "width": 18,
+            "height": 2
+        }
+
+        tk.Button(btn_frame, text="REGISTER", command=self.signup_action, **dark_btn_style).pack(side="left", padx=10)
+        tk.Button(btn_frame, text="BACK", command=lambda: controller.show_frame("LoginPage"), **dark_btn_style).pack(side="left", padx=10)
+
     def toggle_password(self):
-        # Grab the password entry widget from our dictionary
         pw_entry = self.entries['password']
-        
-        if self.var_show_pass.get():
-            pw_entry.config(show="") # Empty string means "show text"
-        else:
-            pw_entry.config(show="*") # Hide text
+        pw_entry.config(show="" if self.var_show_pass.get() else "*")
 
-    #database interaction for sign up
     def signup_action(self):
         name = self.entries['full_name'].get()
         email = self.entries['email'].get()
