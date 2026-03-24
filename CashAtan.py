@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
-from PIL import Image, ImageTk
+from PIL import Image, ImageTk, ImageDraw, ImageOps
 import sqlite3
 from tkcalendar import DateEntry
 from datetime import date
@@ -123,12 +123,11 @@ class CashAtanApp(tk.Tk):
 # 3. PAGE CLASS TEMPLATES
 # ==========================================
 
-# --- 1. LANDING PAGE (LOGIN/SIGN UP) [cite: 50] ---
+# --- 1. LANDING PAGE (LOGIN / SIGN UP) ---
 class LoginPage(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent)
         self.controller = controller
-        # Main background: Deepest Navy
         self.configure(bg="#0B132B") 
 
         # --- HEADER SECTION ---
@@ -138,22 +137,30 @@ class LoginPage(tk.Frame):
         tk.Label(header_frame, text="LOGIN / SIGN UP", font=("Arial", 24, "bold"), 
                  bg="#0B132B", fg="#FFFFFF").pack()
         
-        # Divider line: Steel Blue accent
-        tk.Frame(self, height=2, bg="#3A506B").pack(fill="x", padx=20, pady=(0, 40))
+        tk.Frame(self, height=2, bg="#3A506B").pack(fill="x", padx=20, pady=(0, 5))
+
+        # --- MAIN CONTENT WRAPPER ---
+        self.content_wrapper = tk.Frame(self, bg="#0B132B")
+        self.content_wrapper.pack(fill="x", pady=(10, 0)) 
+
+        # --- LOGO SECTION (300x300) ---
+        self.logo_frame = tk.Frame(self.content_wrapper, bg="#0B132B")
+        self.logo_frame.pack(pady=(0, 10)) 
+
+        self.logo_label = tk.Label(self.logo_frame, bg="#0B132B")
+        self.logo_label.pack()
+        self.set_logo("logo.png") 
 
         # --- FORM SECTION ---
-        form_container = tk.Frame(self, bg="#0B132B")
-        form_container.pack(expand=True)
+        form_container = tk.Frame(self.content_wrapper, bg="#0B132B")
+        form_container.pack() 
 
         self.var_show_pass = tk.BooleanVar(value=False)
-
-        # Labels and Entries with consistent styling
         label_font = ("Arial", 14)
         
         tk.Label(form_container, text="Username:", font=label_font, 
                  bg="#0B132B", fg="#FFFFFF").grid(row=0, column=0, sticky="e", pady=10, padx=10)
         
-        # Entry background: Dark Navy
         self.username_entry = tk.Entry(form_container, font=("Arial", 12), width=30, 
                                        relief="solid", borderwidth=1, 
                                        bg="#1C2541", fg="#FFFFFF", insertbackground="#FFFFFF")
@@ -162,7 +169,6 @@ class LoginPage(tk.Frame):
         tk.Label(form_container, text="Password:", font=label_font, 
                  bg="#0B132B", fg="#FFFFFF").grid(row=1, column=0, sticky="e", pady=10, padx=10)
         
-        # Entry background: Dark Navy
         self.password_entry = tk.Entry(form_container, font=("Arial", 12), width=30, show="*", 
                                        relief="solid", borderwidth=1, 
                                        bg="#1C2541", fg="#FFFFFF", insertbackground="#FFFFFF")
@@ -173,29 +179,40 @@ class LoginPage(tk.Frame):
                        selectcolor="#1C2541", activebackground="#0B132B", 
                        activeforeground="#FFFFFF", command=self.toggle_password).grid(row=2, column=1, sticky="w")
 
-
         # --- BUTTON SECTION ---
         btn_frame = tk.Frame(self, bg="#0B132B")
-        btn_frame.pack(side="bottom", pady=50)
+        btn_frame.pack(side="bottom", pady=40)
 
-        # THE NEW COLOR PALETTE STYLE
         dark_btn_style = {
-            "font": ("Arial", 11, "bold"),
-            "bg": "#3A506B",     # Steel Blue
-            "fg": "white",       # White Text
-            "relief": "flat",    # Clean flat look
-            "activebackground": "#1C2541", # Darker navy when clicked
-            "activeforeground": "white",
-            "width": 18,
-            "height": 2
+            "font": ("Arial", 11, "bold"), "bg": "#3A506B", "fg": "white", 
+            "relief": "flat", "activebackground": "#1C2541", "activeforeground": "white",
+            "width": 18, "height": 2
         }
 
         btn_login = tk.Button(btn_frame, text="LOGIN", command=self.login_action, **dark_btn_style)
         btn_login.pack(side="left", padx=10)
         bind_hover(btn_login, hover_color="#1C2541", normal_color="#3A506B")
+        
         btn_signup = tk.Button(btn_frame, text="SIGN UP", command=lambda: controller.show_frame("SignUpPage"), **dark_btn_style)
         btn_signup.pack(side="left", padx=10)
         bind_hover(btn_signup, hover_color="#1C2541", normal_color="#3A506B")
+
+        self.bind("<Configure>", self.adjust_position)
+
+    def adjust_position(self, event=None):
+        if self.winfo_height() > 800:
+            self.content_wrapper.pack_configure(pady=(80, 0)) 
+        else:
+            self.content_wrapper.pack_configure(pady=(5, 0)) 
+
+    def set_logo(self, path):
+        try:
+            img = Image.open(path)
+            img = img.resize((300, 300), Image.Resampling.LANCZOS)
+            self.logo_photo = ImageTk.PhotoImage(img)
+            self.logo_label.config(image=self.logo_photo)
+        except Exception as e:
+            self.logo_label.config(text="CASHATAN", fg="#00FFCC", font=("Arial", 32, "bold"))
 
     def toggle_password(self):
         self.password_entry.config(show="" if self.var_show_pass.get() else "*")
@@ -210,12 +227,11 @@ class LoginPage(tk.Frame):
             messagebox.showerror("Error", "Invalid username or password.")
     
 
-# --- 2. SIGN UP PAGE [cite: 61] ---
+# --- 2. SIGN UP PAGE ---
 class SignUpPage(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent)
         self.controller = controller
-        # Main background: Deepest Navy
         self.configure(bg="#0B132B")
 
         # --- HEADER SECTION ---
@@ -225,12 +241,23 @@ class SignUpPage(tk.Frame):
         tk.Label(header_frame, text="SIGN UP", font=("Arial", 24, "bold"), 
                  bg="#0B132B", fg="#FFFFFF").pack()
         
-        # Divider line: Steel Blue accent
-        tk.Frame(self, height=2, bg="#3A506B").pack(fill="x", padx=20, pady=(0, 40))
+        tk.Frame(self, height=2, bg="#3A506B").pack(fill="x", padx=20, pady=(0, 5))
+
+        # --- MAIN CONTENT WRAPPER ---
+        self.content_wrapper = tk.Frame(self, bg="#0B132B")
+        self.content_wrapper.pack(fill="x") 
+
+        # --- LOGO SECTION (300x300 for consistency) ---
+        self.logo_frame = tk.Frame(self.content_wrapper, bg="#0B132B")
+        self.logo_frame.pack(pady=(0, 5))
+
+        self.logo_label = tk.Label(self.logo_frame, bg="#0B132B")
+        self.logo_label.pack()
+        self.set_logo("logo.png") 
 
         # --- FORM SECTION ---
-        form_container = tk.Frame(self, bg="#0B132B")
-        form_container.pack(expand=True)
+        form_container = tk.Frame(self.content_wrapper, bg="#0B132B")
+        form_container.pack() 
 
         self.entries = {}
         fields = [("Full Name:", "full_name"), ("Email:", "email"), 
@@ -240,14 +267,13 @@ class SignUpPage(tk.Frame):
 
         for i, (label_text, key_name) in enumerate(fields):
             tk.Label(form_container, text=label_text, font=("Arial", 12), 
-                     bg="#0B132B", fg="#FFFFFF").grid(row=i, column=0, sticky="e", pady=8, padx=10)
+                     bg="#0B132B", fg="#FFFFFF").grid(row=i, column=0, sticky="e", pady=5, padx=10)
             
             show_char = "*" if "Password" in label_text else None
-            # Entry background: Dark Navy
             entry_widget = tk.Entry(form_container, font=("Arial", 12), width=30, show=show_char, 
                                     relief="solid", borderwidth=1, 
                                     bg="#1C2541", fg="#FFFFFF", insertbackground="#FFFFFF")
-            entry_widget.grid(row=i, column=1, pady=8)
+            entry_widget.grid(row=i, column=1, pady=5)
             self.entries[key_name] = entry_widget 
 
         tk.Checkbutton(form_container, text="Show Password", variable=self.var_show_pass, 
@@ -255,29 +281,41 @@ class SignUpPage(tk.Frame):
                        selectcolor="#1C2541", activebackground="#0B132B", 
                        activeforeground="#FFFFFF", command=self.toggle_password).grid(row=len(fields), column=1, sticky="w")
 
-
-        # --- BUTTON SECTION ---
+        # --- BUTTON SECTION (Anchored Bottom) ---
         btn_frame = tk.Frame(self, bg="#0B132B")
-        btn_frame.pack(side="bottom", pady=50)
+        btn_frame.pack(side="bottom", pady=30)
 
-        # THE NEW COLOR PALETTE STYLE
         dark_btn_style = {
-            "font": ("Arial", 11, "bold"),
-            "bg": "#3A506B",     # Steel Blue
-            "fg": "white",       # White Text
-            "relief": "flat",    # Clean flat look
-            "activebackground": "#1C2541", # Dark Navy on click
-            "activeforeground": "white",
-            "width": 18,
-            "height": 2
+            "font": ("Arial", 11, "bold"), "bg": "#3A506B", "fg": "white", 
+            "relief": "flat", "activebackground": "#1C2541", "activeforeground": "white",
+            "width": 18, "height": 2
         }
 
         btn_register = tk.Button(btn_frame, text="REGISTER", command=self.signup_action, **dark_btn_style)
         btn_register.pack(side="left", padx=10)
         bind_hover(btn_register, hover_color="#1C2541", normal_color="#3A506B")
+        
         btn_back = tk.Button(btn_frame, text="BACK", command=lambda: controller.show_frame("LoginPage"), **dark_btn_style)
         btn_back.pack(side="left", padx=10)
         bind_hover(btn_back, hover_color="#1C2541", normal_color="#3A506B")
+
+        self.bind("<Configure>", self.adjust_position)
+
+    def adjust_position(self, event=None):
+        if self.winfo_height() > 800:
+            self.content_wrapper.pack_configure(pady=(60, 0)) 
+        else:
+            self.content_wrapper.pack_configure(pady=(0, 0))  
+
+    def set_logo(self, path):
+        try:
+            from PIL import Image, ImageTk
+            img = Image.open(path)
+            img = img.resize((300, 300), Image.Resampling.LANCZOS) 
+            self.logo_photo = ImageTk.PhotoImage(img)
+            self.logo_label.config(image=self.logo_photo)
+        except Exception:
+            self.logo_label.config(text="CASHATAN", fg="#00FFCC", font=("Arial", 32, "bold"))
 
     def toggle_password(self):
         pw_entry = self.entries['password']
@@ -299,117 +337,140 @@ class SignUpPage(tk.Frame):
         else:
             messagebox.showerror("Error", "Username or Email already exists.")
 
-# --- 3. DASHBOARD (CENTRAL HUB) [cite: 77, 78] ---
+# --- 3. DASHBOARD (CENTRAL HUB) ---
 class DashboardPage(tk.Frame):
     def __init__(self, parent, controller):
-            super().__init__(parent)
-            self.controller = controller
-            # Main Background
-            self.configure(bg="#0B132B") 
+        super().__init__(parent)
+        self.controller = controller
+        self.configure(bg="#0B132B") 
 
-            # --- HEADER SECTION ---
-            header_frame = tk.Frame(self, bg="#0B132B")
-            header_frame.pack(fill="x", padx=20, pady=(20, 10))
+        # --- HEADER SECTION ---
+        header_frame = tk.Frame(self, bg="#0B132B")
+        header_frame.pack(fill="x", padx=20, pady=(20, 10))
 
-            # Header Text: Vibrant Neon Cyan (#00FFCC)
-            tk.Label(header_frame, text="DASHBOARD", font=("Arial", 28, "bold"), 
-                     bg="#0B132B", fg="white").pack() 
-            
-            tk.Frame(self, height=2, bg="#3A506B").pack(fill="x", padx=20, pady=(0, 20))
+        tk.Label(header_frame, text="DASHBOARD", font=("Arial", 28, "bold"), 
+                 bg="#0B132B", fg="white").pack() 
+        
+        tk.Frame(self, height=2, bg="#3A506B").pack(fill="x", padx=20, pady=(0, 20))
 
-            main_container = tk.Frame(self, bg="#0B132B")
-            main_container.pack(fill="both", expand=True, padx=20)
+        # Main horizontal container
+        main_container = tk.Frame(self, bg="#0B132B")
+        main_container.pack(fill="both", expand=True, padx=20)
 
-            # --- LEFT SIDE: NAVIGATION ---
-            nav_frame = tk.Frame(main_container, bg="#0B132B")
-            nav_frame.pack(side="left", fill="y", padx=(0, 30))
+        # --- LEFT SIDE: COMPACT NAVIGATION ---
+        self.nav_canvas = tk.Canvas(main_container, bg="#0B132B", highlightthickness=0, width=280)
+        self.nav_canvas.pack(side="left", fill="y", padx=(0, 20))
 
-            nav_btn_style = {
-                "width": 25, "height": 2, "font": ("Arial", 11, "bold"),
-                "bg": "#3A506B", "fg": "white", "relief": "flat",
-                "activebackground": "#1C2541", "activeforeground": "#00FFCC" # Cyan highlight on click
-            }
+        self.scrollbar = tk.Scrollbar(main_container, orient="vertical", command=self.nav_canvas.yview)
+        self.nav_canvas.configure(yscrollcommand=self.scrollbar.set)
 
-            btns = [
-                ("ADD EXPENSE", "AddExpensePage"),
-                ("ADD INCOME", "AddIncomePage"),
-                ("VIEW TRANSACTIONS", "ViewTransactionsPage"),
-                ("BUDGET OVERVIEW", "BudgetOverviewPage")
-            ]
+        self.nav_inner_frame = tk.Frame(self.nav_canvas, bg="#0B132B")
+        self.canvas_window = self.nav_canvas.create_window((0, 0), window=self.nav_inner_frame, anchor="nw")
 
-            for text, page in btns:
-               btn = tk.Button(nav_frame, text=text, command=lambda p=page: controller.show_frame(p), 
-                          **nav_btn_style)
-               btn.pack(pady=10)
-               bind_hover(btn, hover_color="#1C2541", normal_color="#3A506B")
+        # LOGO
+        self.logo_label = tk.Label(self.nav_inner_frame, bg="#0B132B")
+        self.logo_label.pack(pady=(0, 10))
+        self.set_logo("logo.png") 
 
-            btn_logout = tk.Button(nav_frame, text="LOGOUT", width=25, height=2, font=("Arial", 11, "bold"),
-                    bg="#1C2541", fg="#FF007F", relief="flat", # Pink Logout text
-                    command=lambda: controller.show_frame("LoginPage"))
-            btn_logout.pack(pady=20)
-            bind_hover(btn_logout, hover_color="#3A506B", normal_color="#1C2541")
+        nav_btn_style = {
+            "width": 25, "height": 2, "font": ("Arial", 11, "bold"),
+            "bg": "#3A506B", "fg": "white", "relief": "flat",
+            "activebackground": "#1C2541", "activeforeground": "#00FFCC"
+        }
 
-            # --- RIGHT SIDE: MINI PROFILE ---
-            profile_frame = tk.LabelFrame(main_container, text="Profile", bg="#1C2541", 
-                                          fg="white", font=("Arial", 12, "bold"), padx=20, pady=20)
-            profile_frame.pack(side="right", fill="both", expand=True)
+        btns = [
+            ("ADD EXPENSE", "AddExpensePage"),
+            ("ADD INCOME", "AddIncomePage"),
+            ("VIEW TRANSACTIONS", "ViewTransactionsPage"),
+            ("BUDGET OVERVIEW", "BudgetOverviewPage")
+        ]
 
-            top_row = tk.Frame(profile_frame, bg="#1C2541")
-            top_row.pack(fill="x")
+        for text, page in btns:
+            btn = tk.Button(self.nav_inner_frame, text=text, 
+                            command=lambda p=page: controller.show_frame(p), **nav_btn_style)
+            btn.pack(pady=3) 
+            bind_hover(btn, hover_color="#1C2541", normal_color="#3A506B")
 
-            self.img_label = tk.Label(top_row, bg="#0B132B", relief="solid", borderwidth=1)
-            self.img_label.grid(row=0, column=0, rowspan=4, padx=(0, 20), sticky="nsew")
+        btn_logout = tk.Button(self.nav_inner_frame, text="LOGOUT", width=25, height=2, 
+                               font=("Arial", 11, "bold"), bg="#1C2541", fg="#FF007F", 
+                               relief="flat", command=lambda: controller.show_frame("LoginPage"))
+        btn_logout.pack(pady=10)
+        bind_hover(btn_logout, hover_color="#3A506B", normal_color="#1C2541")
 
-            placeholder = Image.new('RGB', (150, 150), color = '#0B132B')
-            self.ph_img = ImageTk.PhotoImage(placeholder)
-            self.img_label.config(image=self.ph_img)
+        # --- RIGHT SIDE: PROFILE SECTION ---
+        profile_frame = tk.LabelFrame(main_container, text="Profile", bg="#1C2541", 
+                                      fg="white", font=("Arial", 16, "bold"), padx=25, pady=25)
+        profile_frame.pack(side="right", fill="both", expand=True)
 
-            self.username_var = tk.StringVar(value="username")
-            self.date_var = tk.StringVar(value=date.today().strftime("%m/%d/%Y"))
-            
-            tk.Label(top_row, textvariable=self.username_var, font=("Arial", 14, "bold"), 
-                    anchor="w", bg="#1C2541", fg="#FFFFFF").grid(row=0, column=1, pady=2, padx=10, sticky="w")
-            
-            tk.Label(top_row, textvariable=self.date_var, font=("Arial", 10), 
-                    fg="#bdbdbd", anchor="w", bg="#1C2541").grid(row=1, column=1, pady=2, padx=10, sticky="w")
-            
-            goal_input_frame = tk.Frame(top_row, bg="#1C2541")
-            goal_input_frame.grid(row=2, column=1, pady=5, padx=10, sticky="w")
+        top_row = tk.Frame(profile_frame, bg="#1C2541")
+        top_row.pack(fill="x")
 
-            tk.Label(goal_input_frame, text="Budget Goal: ₱", font=("Arial", 10), 
-                     bg="#1C2541", fg="#FFFFFF").pack(side="left")
-            
-            self.goal_entry = tk.Entry(goal_input_frame, width=15, font=("Arial", 10),
-                                       bg="#0B132B", fg="#00FFCC", insertbackground="white")
-            self.goal_entry.pack(side="left", padx=2)
+        self.img_label = tk.Label(top_row, bg="#0B132B", relief="solid", borderwidth=2)
+        self.img_label.grid(row=0, column=0, rowspan=4, padx=(0, 25), sticky="nsew")
 
-            btn_set = tk.Button(goal_input_frame, text="Set", font=("Arial", 8, "bold"), 
-                  bg="#3A506B", fg="#00FFCC", relief="flat", command=self.save_goal)
-            btn_set.pack(side="left", padx=5)
-            bind_hover(btn_set, hover_color="#1C2541", normal_color="#3A506B")
+        placeholder = Image.new('RGB', (150, 150), color = '#0B132B')
+        self.ph_img = ImageTk.PhotoImage(placeholder)
+        self.img_label.config(image=self.ph_img)
 
-            btn_upload_photo = tk.Button(top_row, text="Upload Photo", font=("Arial", 8), bg="#3A506B", 
-                    fg="white", relief="flat", command=self.upload_photo)
-            btn_upload_photo.grid(row=3, column=1, pady=5, padx=10, sticky="w")
-            bind_hover(btn_upload_photo, hover_color="#1C2541", normal_color="#3A506B")
+        self.username_var = tk.StringVar(value="username")
+        self.date_var = tk.StringVar(value=date.today().strftime("%m/%d/%Y"))
+        
+        tk.Label(top_row, textvariable=self.username_var, font=("Arial", 20, "bold"), 
+                anchor="w", bg="#1C2541", fg="#FFFFFF").grid(row=0, column=1, pady=2, padx=10, sticky="w")
+        
+        tk.Label(top_row, textvariable=self.date_var, font=("Arial", 13), 
+                fg="#bdbdbd", anchor="w", bg="#1C2541").grid(row=1, column=1, pady=2, padx=10, sticky="w")
+        
+        goal_input_frame = tk.Frame(top_row, bg="#1C2541")
+        goal_input_frame.grid(row=2, column=1, pady=8, padx=10, sticky="w")
 
+        tk.Label(goal_input_frame, text="Budget Goal: ₱", font=("Arial", 13), 
+                 bg="#1C2541", fg="#FFFFFF").pack(side="left")
+        
+        self.goal_entry = tk.Entry(goal_input_frame, width=15, font=("Arial", 13),
+                                   bg="#0B132B", fg="#00FFCC", insertbackground="white")
+        self.goal_entry.pack(side="left", padx=5)
 
-            # --- BOTTOM SECTION: VIBRANT FINANCIAL STATS ---
-            stats_frame = tk.Frame(profile_frame, bg="#1C2541")
-            stats_frame.pack(fill="x", pady=20, anchor="w")
+        btn_set = tk.Button(goal_input_frame, text="Set", font=("Arial", 9, "bold"), 
+                  bg="#3A506B", fg="#00FFCC", relief="flat", command=self.save_goal, width=5)
+        btn_set.pack(side="left", padx=5)
+        bind_hover(btn_set, hover_color="#1C2541", normal_color="#3A506B")
 
-            self.expense_var = tk.StringVar(value="Total Expenses: ₱0.00")
-            self.savings_var = tk.StringVar(value="Current Savings: ₱0.00")
+        btn_upload_photo = tk.Button(top_row, text="Upload Photo", font=("Arial", 9), bg="#3A506B", 
+                    fg="white", relief="flat", command=self.upload_photo, padx=10)
+        btn_upload_photo.grid(row=3, column=1, pady=5, padx=10, sticky="w")
+        bind_hover(btn_upload_photo, hover_color="#1C2541", normal_color="#3A506B")
 
-            # Expenses Bar: Neon Pink Text (#FF007F)
-            tk.Label(stats_frame, textvariable=self.expense_var, bg="#0B132B", fg="#FF007F",
-                    width=45, anchor="w", padx=10, font=("Arial", 10, "bold"),
-                    relief="solid", borderwidth=1).pack(pady=5, anchor="w")           
-            
-            # Savings Bar: Neon Green Text (#7ED321)
-            tk.Label(stats_frame, textvariable=self.savings_var, bg="#0B132B", fg="#7ED321",
-                    width=45, anchor="w", padx=10, font=("Arial", 10, "bold"),
-                    relief="solid", borderwidth=1).pack(pady=5, anchor="w")
+        stats_frame = tk.Frame(profile_frame, bg="#1C2541")
+        stats_frame.pack(fill="x", pady=20, anchor="w")
+
+        self.expense_var = tk.StringVar(value="Total Expenses: ₱0.00")
+        self.savings_var = tk.StringVar(value="Current Savings: ₱0.00")
+
+        tk.Label(stats_frame, textvariable=self.expense_var, bg="#0B132B", fg="#FF007F",
+                width=40, anchor="w", padx=20, font=("Arial", 13, "bold"),
+                relief="solid", borderwidth=2, height=1).pack(pady=8, anchor="w")           
+        
+        tk.Label(stats_frame, textvariable=self.savings_var, bg="#0B132B", fg="#7ED321",
+                width=40, anchor="w", padx=20, font=("Arial", 13, "bold"),
+                relief="solid", borderwidth=2, height=1).pack(pady=8, anchor="w")
+
+    def on_frame_configure(self, event):
+        self.nav_canvas.configure(scrollregion=self.nav_canvas.bbox("all"))
+
+    def on_canvas_configure(self, event):
+        canvas_width = event.width
+        self.nav_canvas.itemconfig(self.canvas_window, width=canvas_width)
+
+    def set_logo(self, path):
+        try:
+            from PIL import Image, ImageTk
+            img = Image.open(path)
+            img = img.resize((120, 120), Image.Resampling.LANCZOS)
+            self.logo_photo = ImageTk.PhotoImage(img)
+            self.logo_label.config(image=self.logo_photo)
+        except Exception:
+            self.logo_label.config(text="CASHATAN", fg="#00FFCC", font=("Arial", 18, "bold"))
 
     def upload_photo(self):
         file_path = filedialog.askopenfilename(filetypes=[("Image Files", "*.png *.jpg *.jpeg")])
@@ -511,7 +572,6 @@ class AddExpensePage(tk.Frame):
                      bg="#0B132B", fg="white").grid(row=i, column=0, padx=10, pady=10, sticky="e")
             
             if field == "Date:":
-                # DateEntry using Steel Blue for the header
                 entry = DateEntry(form_container, width=28, font=("Arial", 12),
                                   background='#FF007F', foreground='#1C2541',
                                   borderwidth=1, relief="solid", date_pattern='y-mm-dd')
@@ -540,7 +600,7 @@ class AddExpensePage(tk.Frame):
 
         dark_btn_style = {
             "font": ("Arial", 11, "bold"),
-            "bg": "#3A506B",     # Steel Blue
+            "bg": "#3A506B",     
             "fg": "white",
             "relief": "flat",
             "height": 2,
@@ -589,15 +649,10 @@ class AddExpensePage(tk.Frame):
         """Resets the form without crashing on the multi-line Notes field."""
         for field, widget in self.entries.items():
             if field == "Category:" or field == "Source:":
-                # Reset dropdowns to placeholder
                 widget.set("Select " + field[:-1])
-                
             elif field == "Notes:":
-                # Text widgets use "1.0" to tk.END
                 widget.delete("1.0", tk.END)
-                
             elif field != "Date:":
-                # Standard Entry widgets use 0 to tk.END
                 widget.delete(0, tk.END)
 
 
@@ -661,7 +716,7 @@ class AddIncomePage(tk.Frame):
 
         dark_btn_style = {
             "font": ("Arial", 11, "bold"),
-            "bg": "#3A506B",     # Steel Blue
+            "bg": "#3A506B",     
             "fg": "white",
             "relief": "flat",
             "height": 2,
@@ -710,15 +765,10 @@ class AddIncomePage(tk.Frame):
         """Resets the form without crashing on the multi-line Notes field."""
         for field, widget in self.entries.items():
             if field == "Category:" or field == "Source:":
-                # Reset dropdowns to placeholder
                 widget.set("Select " + field[:-1])
-                
             elif field == "Notes:":
-                # Text widgets use "1.0" to tk.END
-                widget.delete("1.0", tk.END)
-                
+                widget.delete("1.0", tk.END)      
             elif field != "Date:":
-                # Standard Entry widgets use 0 to tk.END
                 widget.delete(0, tk.END)
 
 # --- 5. DATA TABLE TEMPLATE (VIEW TRANSACTIONS) ---
@@ -728,7 +778,6 @@ class ViewTransactionsPage(tk.Frame):
         self.controller = controller
         self.config(bg="#0B132B") 
         
-        # Header - White and Consistent
         tk.Label(self, text="VIEW TRANSACTIONS", font=("Arial", 26, "bold"), 
                  bg="#0B132B", fg="white").pack(pady=(20, 10))
         
@@ -752,8 +801,6 @@ class ViewTransactionsPage(tk.Frame):
         cols = ("ID", "Type", "Date", "Category", "Amount", "Notes")
         self.tree = ttk.Treeview(self, columns=cols, show="headings", style="Treeview")
         
-        # --- THE ZEBRA + VIBRANT COLOR TAGS ---
-        # We combine the background logic and text color logic here
         self.tree.tag_configure('income_even', background="#0B132B", foreground="#7ED321")
         self.tree.tag_configure('income_odd', background="#1C2541", foreground="#7ED321")
         self.tree.tag_configure('expense_even', background="#0B132B", foreground="#FF007F")
@@ -769,12 +816,12 @@ class ViewTransactionsPage(tk.Frame):
         self.tree.column("Date", width=120, anchor="center")
         self.tree.column("Category", width=150, anchor="center")
         self.tree.column("Amount", width=100, anchor="center")
-        self.tree.column("Notes", width=250, anchor="w")
+        self.tree.column("Notes", width=250, anchor="center")
 
         self.tree["displaycolumns"] = ("Type", "Date", "Category", "Amount", "Notes")
         self.tree.pack(fill="both", expand=True, padx=30, pady=10)
         
-        # --- FOOTER BUTTONS (Fixed width error) ---
+        # --- FOOTER BUTTONS ---
         btn_frame = tk.Frame(self, bg="#0B132B")
         btn_frame.pack(pady=30)
         
@@ -786,7 +833,6 @@ class ViewTransactionsPage(tk.Frame):
             "width": 22 
         }
         
-        # Gold for Delete (#FFD700), Cyan for Edit (#00FFCC)
         btn_del = tk.Button(btn_frame, text="DELETE", fg="#FF1F1F", 
                   command=self.delete_transaction, **base_btn_style)
         btn_del.pack(side="left", padx=10)
@@ -803,7 +849,6 @@ class ViewTransactionsPage(tk.Frame):
         bind_hover(btn_backToDsh, hover_color="#1C2541", normal_color="#3A506B")
 
     def load_data(self):
-        """Refreshes list and applies Zebra stripes + Vibrant Text."""
         for item in self.tree.get_children():
             self.tree.delete(item)
 
@@ -820,7 +865,6 @@ class ViewTransactionsPage(tk.Frame):
                     t_type = row[1]
                     is_even = (i % 2 == 0)
                     
-                    # Logic to pick the right tag based on Type and Row Number
                     if t_type == 'Income':
                         tag = 'income_even' if is_even else 'income_odd'
                     else:
@@ -845,7 +889,6 @@ class ViewTransactionsPage(tk.Frame):
             self.load_data()
 
     def edit_transaction(self):
-        """Opens a popup window to edit the selected transaction."""
         selected_item = self.tree.selection()
         if not selected_item:
             messagebox.showwarning("Selection", "Please select a row to edit.")
@@ -857,7 +900,6 @@ class ViewTransactionsPage(tk.Frame):
         edit_win = tk.Toplevel(self)
         edit_win.title("Edit Transaction")
         edit_win.geometry("400x450")
-        # Popup Background: Deepest Navy
         edit_win.config(bg="#0B132B")
 
         tk.Label(edit_win, text=f"EDITING {t_type.upper()}", font=("Arial", 14, "bold"), 
@@ -874,14 +916,20 @@ class ViewTransactionsPage(tk.Frame):
         ent_date.set_date(t_date) 
         ent_date.grid(row=0, column=1, pady=8)
 
-        # Category Field
+        # --- DYNAMIC CATEGORY LOGIC ---
         tk.Label(fields_frame, text="Category/Source:", bg="#0B132B", fg="white", font=label_font).grid(row=1, column=0, pady=8, padx=5, sticky="e")
-        categories = ["Food", "Transport", "Bills", "Allowance", "Groceries", "Salary", "Others"]
+        
+        # Filter categories based on transaction type
+        if t_type == "Income":
+            categories = ["Allowance", "Salary", "Gift", "Investment", "Others"]
+        else: # Expense
+            categories = ["Food", "Transport", "Bills", "Groceries", "Rent", "Others"]
+
         ent_cat = ttk.Combobox(fields_frame, values=categories, width=21, state="readonly")
         ent_cat.set(t_cat) 
         ent_cat.grid(row=1, column=1, pady=8)
 
-        # Amount Field - Entry bg matches the darkest navy
+        # Amount Field
         tk.Label(fields_frame, text="Amount:", bg="#0B132B", fg="white", font=label_font).grid(row=2, column=0, pady=8, padx=5, sticky="e")
         ent_amt = tk.Entry(fields_frame, width=23, relief="solid", bg="#1C2541", fg="white", insertbackground="white")
         ent_amt.insert(0, t_amt) 
@@ -931,6 +979,7 @@ class BudgetOverviewPage(tk.Frame):
         user_info = tk.Frame(header_frame, bg="#0B132B")
         user_info.pack(side="left")
         
+        # Canvas for profile image
         self.canvas_user = tk.Canvas(user_info, width=40, height=40, bg="#0B132B", highlightthickness=0)
         self.canvas_user.pack(side="left")
         
@@ -949,7 +998,7 @@ class BudgetOverviewPage(tk.Frame):
         content_frame.columnconfigure(0, weight=1)
         content_frame.columnconfigure(1, weight=1)
 
-        # BOXES (Stats, Summary, Progress) - Using Dark Navy (#1C2541)
+        # BOXES (Stats, Summary, Progress)
         stats_box = tk.Frame(content_frame, bg="#1C2541", padx=15, pady=15, relief="solid", borderwidth=1)
         stats_box.grid(row=0, column=0, sticky="nsew", padx=(0, 10), pady=(0, 10))
         
@@ -977,7 +1026,6 @@ class BudgetOverviewPage(tk.Frame):
         progress_box.grid(row=0, column=1, sticky="nsew", padx=(5, 0))
         tk.Label(progress_box, text="Savings Progress", font=("Arial", 11, "bold"), bg="#3A506B", fg="white", relief="solid", borderwidth=1).pack(fill="x", pady=(0, 5))
         
-        # Gauge Canvas
         self.gauge_canvas = tk.Canvas(progress_box, width=80, height=80, bg="#1C2541", highlightthickness=0)
         self.gauge_canvas.pack(side="left")
         self.lbl_progress_text = tk.Label(progress_box, text="0% of Goal\nAchieved", font=("Arial", 10, "bold"), bg="#1C2541", fg="white", justify="left")
@@ -999,47 +1047,25 @@ class BudgetOverviewPage(tk.Frame):
         self.income_rows = tk.Frame(self.income_box, bg="#1C2541")
         self.income_rows.pack(fill="both", expand=True)
 
-        # --- CHARTS AREA ---
+        # CHARTS
         charts_box = tk.Frame(content_frame, bg="#1C2541", relief="solid", borderwidth=1)
         charts_box.grid(row=1, column=1, sticky="nsew") 
-        
-        tk.Label(charts_box, text="Expenses Analytics", font=("Arial", 11, "bold"), 
-                 bg="#3A506B", fg="white", relief="solid", borderwidth=1).pack(fill="x")
+        tk.Label(charts_box, text="Expenses Analytics", font=("Arial", 11, "bold"), bg="#3A506B", fg="white", relief="solid", borderwidth=1).pack(fill="x")
         
         charts_inner = tk.Frame(charts_box, bg="#1C2541", padx=10, pady=10)
         charts_inner.pack(fill="both", expand=True)
-
         self.chart_canvas = tk.Canvas(charts_inner, bg="#1C2541", highlightthickness=0)
         self.chart_canvas.pack(fill="both", expand=True)
         self.chart_canvas.bind("<Configure>", lambda event: self.load_data())
 
-        # --- FOOTER SECTION (Centered Buttons) ---
+        # FOOTER
         footer_frame = tk.Frame(self, bg="#0B132B")
         footer_frame.pack(side="bottom", pady=20)
+        dark_btn_style = {"font": ("Arial", 11, "bold"), "bg": "#3A506B", "fg": "white", "relief": "flat", "height": 2, "width": 20}
 
-        # Style matching the Midnight Navy theme
-        dark_btn_style = {
-            "font": ("Arial", 11, "bold"),
-            "bg": "#3A506B",
-            "fg": "white",
-            "relief": "flat",
-            "activebackground": "#1C2541",
-            "activeforeground": "white",
-            "height": 2,
-            "width": 20
-        }
-
-        btn_addInc = tk.Button(footer_frame, text="ADD INCOME", command=lambda: controller.show_frame("AddIncomePage"), **dark_btn_style)
-        btn_addInc.pack(side="left", padx=10)
-        bind_hover(btn_addInc, hover_color="#1C2541", normal_color="#3A506B")
-
-        btn_addExp = tk.Button(footer_frame, text="ADD EXPENSE", command=lambda: controller.show_frame("AddExpensePage"), **dark_btn_style)
-        btn_addExp.pack(side="left", padx=10)
-        bind_hover(btn_addExp, hover_color="#1C2541", normal_color="#3A506B")
-
-        btn_backToDsh = tk.Button(footer_frame, text="BACK TO DASHBOARD", command=lambda: controller.show_frame("DashboardPage"), **dark_btn_style)
-        btn_backToDsh.pack(side="left", padx=10)
-        bind_hover(btn_backToDsh, hover_color="#1C2541", normal_color="#3A506B")
+        tk.Button(footer_frame, text="ADD INCOME", command=lambda: controller.show_frame("AddIncomePage"), **dark_btn_style).pack(side="left", padx=10)
+        tk.Button(footer_frame, text="ADD EXPENSE", command=lambda: controller.show_frame("AddExpensePage"), **dark_btn_style).pack(side="left", padx=10)
+        tk.Button(footer_frame, text="BACK TO DASHBOARD", command=lambda: controller.show_frame("DashboardPage"), **dark_btn_style).pack(side="left", padx=10)
 
     def load_data(self):
         u_id = getattr(self.controller, 'current_user_id', None)
@@ -1049,7 +1075,6 @@ class BudgetOverviewPage(tk.Frame):
         canvas_w = self.chart_canvas.winfo_width()
         if canvas_w < 10: canvas_w = 450 
 
-        # Reset Header Icon
         self.canvas_user.delete("all")
         self.canvas_user.create_oval(5, 5, 35, 35, fill="#3A506B", outline="white")
 
@@ -1057,19 +1082,26 @@ class BudgetOverviewPage(tk.Frame):
             with sqlite3.connect("cashatan.db") as connection:
                 cursor = connection.cursor()
                 
-                # 1. Header Profile
+                # --- 1. USER PROFILE (CIRCLE FIX) ---
                 cursor.execute("SELECT username, profile_pic FROM users WHERE user_id=?", (u_id,))
                 user = cursor.fetchone()
                 if user:
                     self.lbl_username.config(text=user[0])
                     if user[1]:
                         try:
-                            img = Image.open(user[1]).resize((30, 30), Image.Resampling.LANCZOS)
+                            size = (32, 32)
+                            img = Image.open(user[1]).convert("RGBA")
+                            img = ImageOps.fit(img, size, Image.Resampling.LANCZOS)
+                            mask = Image.new('L', size, 0)
+                            draw = ImageDraw.Draw(mask)
+                            draw.ellipse((0, 0, size[0], size[1]), fill=255)
+                            img.putalpha(mask)
                             self.profile_photo = ImageTk.PhotoImage(img)
                             self.canvas_user.create_image(20, 20, image=self.profile_photo)
-                        except: pass
+                        except Exception as e:
+                            print(f"Image Load Error: {e}")
 
-                # 2. Financial Logic
+                # --- 2. FINANCIAL CALCULATIONS ---
                 cursor.execute("SELECT savings_goal FROM budgets WHERE user_id=?", (u_id,))
                 goal_data = cursor.fetchone()
                 goal = goal_data[0] if goal_data else 0.0
@@ -1089,7 +1121,7 @@ class BudgetOverviewPage(tk.Frame):
                 self.lbl_total_exp.config(text=f"Total Expenses: ₱{total_expenses:,.2f}")
                 self.lbl_remain_bud.config(text=f"Remaining Budget: ₱{avail_for_exp:,.2f}")
 
-                # 3. Breakdowns Rows (Dark Navy background with white text)
+                # --- 3. BREAKDOWNS (RESTORED) ---
                 for w in self.expense_rows.winfo_children(): w.destroy()
                 cursor.execute("SELECT category, SUM(amount) FROM transactions WHERE user_id=? AND type='Expense' GROUP BY category", (u_id,))
                 exp_cats = cursor.fetchall()
@@ -1107,7 +1139,7 @@ class BudgetOverviewPage(tk.Frame):
                     tk.Label(row, text=src, bg="#1C2541", fg="white").pack(side="left")
                     tk.Label(row, text=f"₱{amt:,.0f}", bg="#1C2541", fg="#7ED321", font=("Arial", 10, "bold")).pack(side="right")
 
-                # 4. Progress Gauge - VIBRANT COLOR (Neon Orange)
+                # --- 4. PROGRESS GAUGE (RESTORED) ---
                 self.gauge_canvas.delete("all")
                 self.gauge_canvas.create_oval(10, 10, 70, 70, outline="#3A506B", width=4)
                 extent = -(progress_pct / 100) * 359.9
@@ -1115,44 +1147,36 @@ class BudgetOverviewPage(tk.Frame):
                 self.gauge_canvas.create_text(40, 40, text=f"{int(progress_pct)}%", font=("Arial", 10, "bold"), fill="white")
                 self.lbl_progress_text.config(text=f"{int(progress_pct)}% of Goal\nAchieved")
 
-                # --- 5. DYNAMIC CHARTS (VIBRANT COLORS) ---
+                # --- 5. GRAPHS & CHARTS (RESTORED) ---
                 self.chart_canvas.delete("all")
                 canvas_h = self.chart_canvas.winfo_height()
                 if canvas_h <= 1: canvas_h = 300
 
-                # Coordinate Math
-                pie_cx, pie_cy = canvas_w * 0.60, canvas_h * 0.45 
-                pie_r = min(canvas_w * 0.12, canvas_h * 0.20)
-                title_y = canvas_h * 0.08
-                line_x_start, line_x_end = canvas_w * 0.08, canvas_w * 0.40
-                line_y_bottom, line_y_top = canvas_h * 0.75, canvas_h * 0.20
+                pie_cx, pie_cy = canvas_w * 0.70, canvas_h * 0.45 
+                pie_r = min(canvas_w * 0.10, canvas_h * 0.20)
+                title_y = canvas_h * 0.10
+                line_x_start, line_x_end = canvas_w * 0.05, canvas_w * 0.45
+                line_y_bottom, line_y_top = canvas_h * 0.85, canvas_h * 0.25
 
-                # Titles (White)
-                title_font = ("Arial", max(9, int(canvas_h * 0.04)), "bold")
+                title_font = ("Arial", 10, "bold")
                 self.chart_canvas.create_text((line_x_start + line_x_end) / 2, title_y, text="Expenses Over Time", font=title_font, fill="white")
                 self.chart_canvas.create_text(pie_cx, title_y, text="Expenses Categories", font=title_font, fill="white")
 
-                # VIBRANT COLOR PALETTE
                 vibrant_colors = ["#00FFCC", "#FF007F", "#7ED321", "#FFD700", "#BD10E0", "#50E3C2", "#F5A623"]
 
-                # Vibrant Pie Chart
                 if total_expenses > 0:
                     start_ang = 90
-                    line_height = max(12, int(canvas_h * 0.045))
                     for i, (cat, amt) in enumerate(exp_cats):
                         extent = -(amt / total_expenses) * 359.9
                         color = vibrant_colors[i % len(vibrant_colors)]
                         self.chart_canvas.create_arc(pie_cx - pie_r, pie_cy - pie_r, pie_cx + pie_r, pie_cy + pie_r, 
                                                      start=start_ang, extent=extent, fill=color, outline="#1C2541")
                         
-                        # Legend
-                        lx, ly = pie_cx + pie_r + 15, (pie_cy - pie_r) + (i * line_height)
-                        sq = max(8, int(line_height * 0.6))
-                        self.chart_canvas.create_rectangle(lx, ly, lx + sq, ly + sq, fill=color, outline="white")
-                        self.chart_canvas.create_text(lx + sq + 8, ly + (sq/2), text=cat, font=("Arial", 8, "bold"), anchor="w", fill="white")
+                        lx, ly = pie_cx + pie_r + 20, (pie_cy - pie_r) + (i * 20)
+                        self.chart_canvas.create_rectangle(lx, ly, lx + 10, ly + 10, fill=color, outline="white")
+                        self.chart_canvas.create_text(lx + 15, ly + 5, text=cat, font=("Arial", 8, "bold"), anchor="w", fill="white")
                         start_ang += extent
 
-                # Vibrant Line Chart (Neon Blue Line)
                 cursor.execute("SELECT date, amount FROM transactions WHERE user_id=? AND type='Expense' ORDER BY date DESC LIMIT 5", (u_id,))
                 data_points = cursor.fetchall()[::-1]
                 if data_points:
@@ -1164,9 +1188,8 @@ class BudgetOverviewPage(tk.Frame):
                         y = line_y_bottom - (float(val) / (max_v if max_v > 0 else 1) * (line_y_bottom - line_y_top))
                         pts.extend([x, y])
                     if len(pts) > 2:
-                        self.chart_canvas.create_line(pts, width=3, fill="#00E5FF", smooth=True) # Neon Blue line
+                        self.chart_canvas.create_line(pts, width=3, fill="#00E5FF", smooth=True) 
                 
-                # Axes (White/Steel Blue)
                 self.chart_canvas.create_line(line_x_start - 5, line_y_bottom, line_x_end + 10, line_y_bottom, fill="white") 
                 self.chart_canvas.create_line(line_x_start - 5, line_y_top, line_x_start - 5, line_y_bottom, fill="white")
 
