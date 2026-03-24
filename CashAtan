@@ -343,117 +343,147 @@ class SignUpPage(tk.Frame):
         else:
             messagebox.showerror("Error", "Username or Email already exists.")
 
-# --- 3. DASHBOARD (CENTRAL HUB) [cite: 77, 78] ---
+# --- 3. DASHBOARD (CENTRAL HUB) ---
 class DashboardPage(tk.Frame):
     def __init__(self, parent, controller):
-            super().__init__(parent)
-            self.controller = controller
-            # Main Background
-            self.configure(bg="#0B132B") 
+        super().__init__(parent)
+        self.controller = controller
+        self.configure(bg="#0B132B") 
 
-            # --- HEADER SECTION ---
-            header_frame = tk.Frame(self, bg="#0B132B")
-            header_frame.pack(fill="x", padx=20, pady=(20, 10))
+        # --- HEADER SECTION ---
+        header_frame = tk.Frame(self, bg="#0B132B")
+        header_frame.pack(fill="x", padx=20, pady=(20, 10))
 
-            # Header Text: Vibrant Neon Cyan (#00FFCC)
-            tk.Label(header_frame, text="DASHBOARD", font=("Arial", 28, "bold"), 
-                     bg="#0B132B", fg="white").pack() 
-            
-            tk.Frame(self, height=2, bg="#3A506B").pack(fill="x", padx=20, pady=(0, 20))
+        tk.Label(header_frame, text="DASHBOARD", font=("Arial", 28, "bold"), 
+                 bg="#0B132B", fg="white").pack() 
+        
+        tk.Frame(self, height=2, bg="#3A506B").pack(fill="x", padx=20, pady=(0, 20))
 
-            main_container = tk.Frame(self, bg="#0B132B")
-            main_container.pack(fill="both", expand=True, padx=20)
+        # Main horizontal container
+        main_container = tk.Frame(self, bg="#0B132B")
+        main_container.pack(fill="both", expand=True, padx=20)
 
-            # --- LEFT SIDE: NAVIGATION ---
-            nav_frame = tk.Frame(main_container, bg="#0B132B")
-            nav_frame.pack(side="left", fill="y", padx=(0, 30))
+        # --- LEFT SIDE: SCROLLABLE NAVIGATION ---
+        # Using a canvas for the sidebar so it's adjustable if not full screen
+        self.nav_canvas = tk.Canvas(main_container, bg="#0B132B", highlightthickness=0, width=280)
+        self.nav_canvas.pack(side="left", fill="y", padx=(0, 20))
 
-            nav_btn_style = {
-                "width": 25, "height": 2, "font": ("Arial", 11, "bold"),
-                "bg": "#3A506B", "fg": "white", "relief": "flat",
-                "activebackground": "#1C2541", "activeforeground": "#00FFCC" # Cyan highlight on click
-            }
+        self.scrollbar = tk.Scrollbar(main_container, orient="vertical", command=self.nav_canvas.yview)
+        # Scrollbar only shows if needed, but we prepare it here
+        self.nav_canvas.configure(yscrollcommand=self.scrollbar.set)
 
-            btns = [
-                ("ADD EXPENSE", "AddExpensePage"),
-                ("ADD INCOME", "AddIncomePage"),
-                ("VIEW TRANSACTIONS", "ViewTransactionsPage"),
-                ("BUDGET OVERVIEW", "BudgetOverviewPage")
-            ]
+        self.nav_inner_frame = tk.Frame(self.nav_canvas, bg="#0B132B")
+        self.canvas_window = self.nav_canvas.create_window((0, 0), window=self.nav_inner_frame, anchor="nw")
 
-            for text, page in btns:
-               btn = tk.Button(nav_frame, text=text, command=lambda p=page: controller.show_frame(p), 
-                          **nav_btn_style)
-               btn.pack(pady=10)
-               bind_hover(btn, hover_color="#1C2541", normal_color="#3A506B")
+        # LOGO
+        self.logo_label = tk.Label(self.nav_inner_frame, bg="#0B132B")
+        self.logo_label.pack(pady=(0, 15))
+        self.set_logo("logo.png") 
 
-            btn_logout = tk.Button(nav_frame, text="LOGOUT", width=25, height=2, font=("Arial", 11, "bold"),
-                    bg="#1C2541", fg="#FF007F", relief="flat", # Pink Logout text
-                    command=lambda: controller.show_frame("LoginPage"))
-            btn_logout.pack(pady=20)
-            bind_hover(btn_logout, hover_color="#3A506B", normal_color="#1C2541")
+        nav_btn_style = {
+            "width": 25, "height": 2, "font": ("Arial", 11, "bold"),
+            "bg": "#3A506B", "fg": "white", "relief": "flat",
+            "activebackground": "#1C2541", "activeforeground": "#00FFCC"
+        }
 
-            # --- RIGHT SIDE: MINI PROFILE ---
-            profile_frame = tk.LabelFrame(main_container, text="Profile", bg="#1C2541", 
-                                          fg="white", font=("Arial", 12, "bold"), padx=20, pady=20)
-            profile_frame.pack(side="right", fill="both", expand=True)
+        btns = [
+            ("ADD EXPENSE", "AddExpensePage"),
+            ("ADD INCOME", "AddIncomePage"),
+            ("VIEW TRANSACTIONS", "ViewTransactionsPage"),
+            ("BUDGET OVERVIEW", "BudgetOverviewPage")
+        ]
 
-            top_row = tk.Frame(profile_frame, bg="#1C2541")
-            top_row.pack(fill="x")
+        for text, page in btns:
+            btn = tk.Button(self.nav_inner_frame, text=text, 
+                            command=lambda p=page: controller.show_frame(p), **nav_btn_style)
+            btn.pack(pady=5) # Reduced pady for better fit
+            bind_hover(btn, hover_color="#1C2541", normal_color="#3A506B")
 
-            self.img_label = tk.Label(top_row, bg="#0B132B", relief="solid", borderwidth=1)
-            self.img_label.grid(row=0, column=0, rowspan=4, padx=(0, 20), sticky="nsew")
+        btn_logout = tk.Button(self.nav_inner_frame, text="LOGOUT", width=25, height=2, 
+                               font=("Arial", 11, "bold"), bg="#1C2541", fg="#FF007F", 
+                               relief="flat", command=lambda: controller.show_frame("LoginPage"))
+        btn_logout.pack(pady=15)
+        bind_hover(btn_logout, hover_color="#3A506B", normal_color="#1C2541")
 
-            placeholder = Image.new('RGB', (150, 150), color = '#0B132B')
-            self.ph_img = ImageTk.PhotoImage(placeholder)
-            self.img_label.config(image=self.ph_img)
+        # Bindings for responsiveness
+        self.nav_inner_frame.bind("<Configure>", self.on_frame_configure)
+        self.nav_canvas.bind("<Configure>", self.on_canvas_configure)
 
-            self.username_var = tk.StringVar(value="username")
-            self.date_var = tk.StringVar(value=date.today().strftime("%m/%d/%Y"))
-            
-            tk.Label(top_row, textvariable=self.username_var, font=("Arial", 14, "bold"), 
-                    anchor="w", bg="#1C2541", fg="#FFFFFF").grid(row=0, column=1, pady=2, padx=10, sticky="w")
-            
-            tk.Label(top_row, textvariable=self.date_var, font=("Arial", 10), 
-                    fg="#bdbdbd", anchor="w", bg="#1C2541").grid(row=1, column=1, pady=2, padx=10, sticky="w")
-            
-            goal_input_frame = tk.Frame(top_row, bg="#1C2541")
-            goal_input_frame.grid(row=2, column=1, pady=5, padx=10, sticky="w")
+        # --- RIGHT SIDE: BIGGER PROFILE SECTION ---
+        profile_frame = tk.LabelFrame(main_container, text="Profile", bg="#1C2541", 
+                                      fg="white", font=("Arial", 16, "bold"), padx=30, pady=30)
+        profile_frame.pack(side="right", fill="both", expand=True)
 
-            tk.Label(goal_input_frame, text="Budget Goal: ₱", font=("Arial", 10), 
-                     bg="#1C2541", fg="#FFFFFF").pack(side="left")
-            
-            self.goal_entry = tk.Entry(goal_input_frame, width=15, font=("Arial", 10),
-                                       bg="#0B132B", fg="#00FFCC", insertbackground="white")
-            self.goal_entry.pack(side="left", padx=2)
+        top_row = tk.Frame(profile_frame, bg="#1C2541")
+        top_row.pack(fill="x")
 
-            btn_set = tk.Button(goal_input_frame, text="Set", font=("Arial", 8, "bold"), 
-                  bg="#3A506B", fg="#00FFCC", relief="flat", command=self.save_goal)
-            btn_set.pack(side="left", padx=5)
-            bind_hover(btn_set, hover_color="#1C2541", normal_color="#3A506B")
+        self.img_label = tk.Label(top_row, bg="#0B132B", relief="solid", borderwidth=2)
+        self.img_label.grid(row=0, column=0, rowspan=4, padx=(0, 30), sticky="nsew")
 
-            btn_upload_photo = tk.Button(top_row, text="Upload Photo", font=("Arial", 8), bg="#3A506B", 
-                    fg="white", relief="flat", command=self.upload_photo)
-            btn_upload_photo.grid(row=3, column=1, pady=5, padx=10, sticky="w")
-            bind_hover(btn_upload_photo, hover_color="#1C2541", normal_color="#3A506B")
+        placeholder = Image.new('RGB', (200, 200), color = '#0B132B')
+        self.ph_img = ImageTk.PhotoImage(placeholder)
+        self.img_label.config(image=self.ph_img)
 
+        self.username_var = tk.StringVar(value="username")
+        self.date_var = tk.StringVar(value=date.today().strftime("%m/%d/%Y"))
+        
+        tk.Label(top_row, textvariable=self.username_var, font=("Arial", 22, "bold"), 
+                anchor="w", bg="#1C2541", fg="#FFFFFF").grid(row=0, column=1, pady=5, padx=10, sticky="w")
+        
+        tk.Label(top_row, textvariable=self.date_var, font=("Arial", 14), 
+                fg="#bdbdbd", anchor="w", bg="#1C2541").grid(row=1, column=1, pady=5, padx=10, sticky="w")
+        
+        goal_input_frame = tk.Frame(top_row, bg="#1C2541")
+        goal_input_frame.grid(row=2, column=1, pady=10, padx=10, sticky="w")
 
-            # --- BOTTOM SECTION: VIBRANT FINANCIAL STATS ---
-            stats_frame = tk.Frame(profile_frame, bg="#1C2541")
-            stats_frame.pack(fill="x", pady=20, anchor="w")
+        tk.Label(goal_input_frame, text="Budget Goal: ₱", font=("Arial", 14), 
+                 bg="#1C2541", fg="#FFFFFF").pack(side="left")
+        
+        self.goal_entry = tk.Entry(goal_input_frame, width=18, font=("Arial", 14),
+                                   bg="#0B132B", fg="#00FFCC", insertbackground="white")
+        self.goal_entry.pack(side="left", padx=5)
 
-            self.expense_var = tk.StringVar(value="Total Expenses: ₱0.00")
-            self.savings_var = tk.StringVar(value="Current Savings: ₱0.00")
+        btn_set = tk.Button(goal_input_frame, text="Set", font=("Arial", 10, "bold"), 
+                  bg="#3A506B", fg="#00FFCC", relief="flat", command=self.save_goal, width=6)
+        btn_set.pack(side="left", padx=10)
+        bind_hover(btn_set, hover_color="#1C2541", normal_color="#3A506B")
 
-            # Expenses Bar: Neon Pink Text (#FF007F)
-            tk.Label(stats_frame, textvariable=self.expense_var, bg="#0B132B", fg="#FF007F",
-                    width=45, anchor="w", padx=10, font=("Arial", 10, "bold"),
-                    relief="solid", borderwidth=1).pack(pady=5, anchor="w")           
-            
-            # Savings Bar: Neon Green Text (#7ED321)
-            tk.Label(stats_frame, textvariable=self.savings_var, bg="#0B132B", fg="#7ED321",
-                    width=45, anchor="w", padx=10, font=("Arial", 10, "bold"),
-                    relief="solid", borderwidth=1).pack(pady=5, anchor="w")
+        btn_upload_photo = tk.Button(top_row, text="Upload Photo", font=("Arial", 10), bg="#3A506B", 
+                    fg="white", relief="flat", command=self.upload_photo, padx=10)
+        btn_upload_photo.grid(row=3, column=1, pady=10, padx=10, sticky="w")
+        bind_hover(btn_upload_photo, hover_color="#1C2541", normal_color="#3A506B")
+
+        stats_frame = tk.Frame(profile_frame, bg="#1C2541")
+        stats_frame.pack(fill="x", pady=40, anchor="w")
+
+        self.expense_var = tk.StringVar(value="Total Expenses: ₱0.00")
+        self.savings_var = tk.StringVar(value="Current Savings: ₱0.00")
+
+        tk.Label(stats_frame, textvariable=self.expense_var, bg="#0B132B", fg="#FF007F",
+                width=50, anchor="w", padx=20, font=("Arial", 14, "bold"),
+                relief="solid", borderwidth=2, height=2).pack(pady=10, anchor="w")           
+        
+        tk.Label(stats_frame, textvariable=self.savings_var, bg="#0B132B", fg="#7ED321",
+                width=50, anchor="w", padx=20, font=("Arial", 14, "bold"),
+                relief="solid", borderwidth=2, height=2).pack(pady=10, anchor="w")
+
+    # --- RESPONSIVE HELPER METHODS ---
+    def on_frame_configure(self, event):
+        self.nav_canvas.configure(scrollregion=self.nav_canvas.bbox("all"))
+
+    def on_canvas_configure(self, event):
+        canvas_width = event.width
+        self.nav_canvas.itemconfig(self.canvas_window, width=canvas_width)
+
+    def set_logo(self, path):
+        try:
+            from PIL import Image, ImageTk
+            img = Image.open(path)
+            img = img.resize((250, 250), Image.Resampling.LANCZOS)
+            self.logo_photo = ImageTk.PhotoImage(img)
+            self.logo_label.config(image=self.logo_photo)
+        except Exception:
+            self.logo_label.config(text="CASHATAN", fg="#00FFCC", font=("Arial", 24, "bold"))
 
     def upload_photo(self):
         file_path = filedialog.askopenfilename(filetypes=[("Image Files", "*.png *.jpg *.jpeg")])
@@ -481,7 +511,7 @@ class DashboardPage(tk.Frame):
                     if user_info[1]: 
                         try:
                             img = Image.open(user_info[1])
-                            img = img.resize((150, 150), Image.Resampling.LANCZOS)
+                            img = img.resize((200, 200), Image.Resampling.LANCZOS)
                             photo = ImageTk.PhotoImage(img)
                             self.img_label.config(image=photo)
                             self.img_label.image = photo 
