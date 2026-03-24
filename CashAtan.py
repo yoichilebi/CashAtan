@@ -569,7 +569,7 @@ class AddExpensePage(tk.Frame):
             elif field != "Date:":
                 widget.delete(0, tk.END)
 
-                
+
 class AddIncomePage(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent)
@@ -1038,7 +1038,7 @@ class BudgetOverviewPage(tk.Frame):
                     row = tk.Frame(self.expense_rows, bg="#1C2541")
                     row.pack(fill="x", padx=10, pady=2)
                     tk.Label(row, text=cat, bg="#1C2541", fg="white").pack(side="left")
-                    tk.Label(row, text=f"₱{amt:,.0f}", bg="#1C2541", fg="#FF007F", font=("Arial", 10, "bold")).pack(side="right")
+                    tk.Label(row, text=f"₱{amt:,.0f}", bg="#1C2541", fg="#00FFCC", font=("Arial", 10, "bold")).pack(side="right")
 
                 for w in self.income_rows.winfo_children(): w.destroy()
                 cursor.execute("SELECT category, SUM(amount) FROM transactions WHERE user_id=? AND type='Income' GROUP BY category", (u_id,))
