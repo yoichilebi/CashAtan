@@ -827,7 +827,6 @@ class ViewTransactionsPage(tk.Frame):
         self.tree = ttk.Treeview(self, columns=cols, show="headings", style="Treeview")
         
         # --- THE ZEBRA + VIBRANT COLOR TAGS ---
-        # We combine the background logic and text color logic here
         self.tree.tag_configure('income_even', background="#0B132B", foreground="#7ED321")
         self.tree.tag_configure('income_odd', background="#1C2541", foreground="#7ED321")
         self.tree.tag_configure('expense_even', background="#0B132B", foreground="#FF007F")
@@ -848,7 +847,7 @@ class ViewTransactionsPage(tk.Frame):
         self.tree["displaycolumns"] = ("Type", "Date", "Category", "Amount", "Notes")
         self.tree.pack(fill="both", expand=True, padx=30, pady=10)
         
-        # --- FOOTER BUTTONS (Fixed width error) ---
+        # --- FOOTER BUTTONS ---
         btn_frame = tk.Frame(self, bg="#0B132B")
         btn_frame.pack(pady=30)
         
@@ -860,7 +859,6 @@ class ViewTransactionsPage(tk.Frame):
             "width": 22 
         }
         
-        # Gold for Delete (#FFD700), Cyan for Edit (#00FFCC)
         btn_del = tk.Button(btn_frame, text="DELETE", fg="#FF1F1F", 
                   command=self.delete_transaction, **base_btn_style)
         btn_del.pack(side="left", padx=10)
@@ -877,7 +875,6 @@ class ViewTransactionsPage(tk.Frame):
         bind_hover(btn_backToDsh, hover_color="#1C2541", normal_color="#3A506B")
 
     def load_data(self):
-        """Refreshes list and applies Zebra stripes + Vibrant Text."""
         for item in self.tree.get_children():
             self.tree.delete(item)
 
@@ -894,7 +891,6 @@ class ViewTransactionsPage(tk.Frame):
                     t_type = row[1]
                     is_even = (i % 2 == 0)
                     
-                    # Logic to pick the right tag based on Type and Row Number
                     if t_type == 'Income':
                         tag = 'income_even' if is_even else 'income_odd'
                     else:
@@ -919,7 +915,6 @@ class ViewTransactionsPage(tk.Frame):
             self.load_data()
 
     def edit_transaction(self):
-        """Opens a popup window to edit the selected transaction."""
         selected_item = self.tree.selection()
         if not selected_item:
             messagebox.showwarning("Selection", "Please select a row to edit.")
@@ -931,7 +926,6 @@ class ViewTransactionsPage(tk.Frame):
         edit_win = tk.Toplevel(self)
         edit_win.title("Edit Transaction")
         edit_win.geometry("400x450")
-        # Popup Background: Deepest Navy
         edit_win.config(bg="#0B132B")
 
         tk.Label(edit_win, text=f"EDITING {t_type.upper()}", font=("Arial", 14, "bold"), 
@@ -948,14 +942,20 @@ class ViewTransactionsPage(tk.Frame):
         ent_date.set_date(t_date) 
         ent_date.grid(row=0, column=1, pady=8)
 
-        # Category Field
+        # --- DYNAMIC CATEGORY LOGIC ---
         tk.Label(fields_frame, text="Category/Source:", bg="#0B132B", fg="white", font=label_font).grid(row=1, column=0, pady=8, padx=5, sticky="e")
-        categories = ["Food", "Transport", "Bills", "Allowance", "Groceries", "Salary", "Others"]
+        
+        # Filter categories based on transaction type
+        if t_type == "Income":
+            categories = ["Allowance", "Salary", "Gift", "Investment", "Others"]
+        else: # Expense
+            categories = ["Food", "Transport", "Bills", "Groceries", "Rent", "Others"]
+
         ent_cat = ttk.Combobox(fields_frame, values=categories, width=21, state="readonly")
         ent_cat.set(t_cat) 
         ent_cat.grid(row=1, column=1, pady=8)
 
-        # Amount Field - Entry bg matches the darkest navy
+        # Amount Field
         tk.Label(fields_frame, text="Amount:", bg="#0B132B", fg="white", font=label_font).grid(row=2, column=0, pady=8, padx=5, sticky="e")
         ent_amt = tk.Entry(fields_frame, width=23, relief="solid", bg="#1C2541", fg="white", insertbackground="white")
         ent_amt.insert(0, t_amt) 
