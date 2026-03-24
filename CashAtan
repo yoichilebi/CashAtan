@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
-from PIL import Image, ImageTk
+from PIL import Image, ImageTk, ImageDraw, ImageOps
 import sqlite3
 from tkcalendar import DateEntry
 from datetime import date
@@ -1005,6 +1005,7 @@ class BudgetOverviewPage(tk.Frame):
         user_info = tk.Frame(header_frame, bg="#0B132B")
         user_info.pack(side="left")
         
+        # Canvas for circular profile image
         self.canvas_user = tk.Canvas(user_info, width=40, height=40, bg="#0B132B", highlightthickness=0)
         self.canvas_user.pack(side="left")
         
@@ -1023,7 +1024,7 @@ class BudgetOverviewPage(tk.Frame):
         content_frame.columnconfigure(0, weight=1)
         content_frame.columnconfigure(1, weight=1)
 
-        # BOXES (Stats, Summary, Progress) - Using Dark Navy (#1C2541)
+        # BOXES (Stats, Summary, Progress)
         stats_box = tk.Frame(content_frame, bg="#1C2541", padx=15, pady=15, relief="solid", borderwidth=1)
         stats_box.grid(row=0, column=0, sticky="nsew", padx=(0, 10), pady=(0, 10))
         
@@ -1051,7 +1052,6 @@ class BudgetOverviewPage(tk.Frame):
         progress_box.grid(row=0, column=1, sticky="nsew", padx=(5, 0))
         tk.Label(progress_box, text="Savings Progress", font=("Arial", 11, "bold"), bg="#3A506B", fg="white", relief="solid", borderwidth=1).pack(fill="x", pady=(0, 5))
         
-        # Gauge Canvas
         self.gauge_canvas = tk.Canvas(progress_box, width=80, height=80, bg="#1C2541", highlightthickness=0)
         self.gauge_canvas.pack(side="left")
         self.lbl_progress_text = tk.Label(progress_box, text="0% of Goal\nAchieved", font=("Arial", 10, "bold"), bg="#1C2541", fg="white", justify="left")
@@ -1073,47 +1073,25 @@ class BudgetOverviewPage(tk.Frame):
         self.income_rows = tk.Frame(self.income_box, bg="#1C2541")
         self.income_rows.pack(fill="both", expand=True)
 
-        # --- CHARTS AREA ---
+        # CHARTS
         charts_box = tk.Frame(content_frame, bg="#1C2541", relief="solid", borderwidth=1)
         charts_box.grid(row=1, column=1, sticky="nsew") 
-        
-        tk.Label(charts_box, text="Expenses Analytics", font=("Arial", 11, "bold"), 
-                 bg="#3A506B", fg="white", relief="solid", borderwidth=1).pack(fill="x")
+        tk.Label(charts_box, text="Expenses Analytics", font=("Arial", 11, "bold"), bg="#3A506B", fg="white", relief="solid", borderwidth=1).pack(fill="x")
         
         charts_inner = tk.Frame(charts_box, bg="#1C2541", padx=10, pady=10)
         charts_inner.pack(fill="both", expand=True)
-
         self.chart_canvas = tk.Canvas(charts_inner, bg="#1C2541", highlightthickness=0)
         self.chart_canvas.pack(fill="both", expand=True)
         self.chart_canvas.bind("<Configure>", lambda event: self.load_data())
 
-        # --- FOOTER SECTION (Centered Buttons) ---
+        # FOOTER
         footer_frame = tk.Frame(self, bg="#0B132B")
         footer_frame.pack(side="bottom", pady=20)
+        dark_btn_style = {"font": ("Arial", 11, "bold"), "bg": "#3A506B", "fg": "white", "relief": "flat", "height": 2, "width": 20}
 
-        # Style matching the Midnight Navy theme
-        dark_btn_style = {
-            "font": ("Arial", 11, "bold"),
-            "bg": "#3A506B",
-            "fg": "white",
-            "relief": "flat",
-            "activebackground": "#1C2541",
-            "activeforeground": "white",
-            "height": 2,
-            "width": 20
-        }
-
-        btn_addInc = tk.Button(footer_frame, text="ADD INCOME", command=lambda: controller.show_frame("AddIncomePage"), **dark_btn_style)
-        btn_addInc.pack(side="left", padx=10)
-        bind_hover(btn_addInc, hover_color="#1C2541", normal_color="#3A506B")
-
-        btn_addExp = tk.Button(footer_frame, text="ADD EXPENSE", command=lambda: controller.show_frame("AddExpensePage"), **dark_btn_style)
-        btn_addExp.pack(side="left", padx=10)
-        bind_hover(btn_addExp, hover_color="#1C2541", normal_color="#3A506B")
-
-        btn_backToDsh = tk.Button(footer_frame, text="BACK TO DASHBOARD", command=lambda: controller.show_frame("DashboardPage"), **dark_btn_style)
-        btn_backToDsh.pack(side="left", padx=10)
-        bind_hover(btn_backToDsh, hover_color="#1C2541", normal_color="#3A506B")
+        tk.Button(footer_frame, text="ADD INCOME", command=lambda: controller.show_frame("AddIncomePage"), **dark_btn_style).pack(side="left", padx=10)
+        tk.Button(footer_frame, text="ADD EXPENSE", command=lambda: controller.show_frame("AddExpensePage"), **dark_btn_style).pack(side="left", padx=10)
+        tk.Button(footer_frame, text="BACK TO DASHBOARD", command=lambda: controller.show_frame("DashboardPage"), **dark_btn_style).pack(side="left", padx=10)
 
     def load_data(self):
         u_id = getattr(self.controller, 'current_user_id', None)
@@ -1123,7 +1101,7 @@ class BudgetOverviewPage(tk.Frame):
         canvas_w = self.chart_canvas.winfo_width()
         if canvas_w < 10: canvas_w = 450 
 
-        # Reset Header Icon
+        # Reset Header Icon Placeholder
         self.canvas_user.delete("all")
         self.canvas_user.create_oval(5, 5, 35, 35, fill="#3A506B", outline="white")
 
@@ -1131,19 +1109,26 @@ class BudgetOverviewPage(tk.Frame):
             with sqlite3.connect("cashatan.db") as connection:
                 cursor = connection.cursor()
                 
-                # 1. Header Profile
+                # --- 1. USER PROFILE (CIRCLE FIX) ---
                 cursor.execute("SELECT username, profile_pic FROM users WHERE user_id=?", (u_id,))
                 user = cursor.fetchone()
                 if user:
                     self.lbl_username.config(text=user[0])
                     if user[1]:
                         try:
-                            img = Image.open(user[1]).resize((30, 30), Image.Resampling.LANCZOS)
+                            size = (32, 32)
+                            img = Image.open(user[1]).convert("RGBA")
+                            img = ImageOps.fit(img, size, Image.Resampling.LANCZOS)
+                            mask = Image.new('L', size, 0)
+                            draw = ImageDraw.Draw(mask)
+                            draw.ellipse((0, 0, size[0], size[1]), fill=255)
+                            img.putalpha(mask)
                             self.profile_photo = ImageTk.PhotoImage(img)
                             self.canvas_user.create_image(20, 20, image=self.profile_photo)
-                        except: pass
+                        except Exception as e:
+                            print(f"Image Load Error: {e}")
 
-                # 2. Financial Logic
+                # --- 2. FINANCIAL CALCULATIONS ---
                 cursor.execute("SELECT savings_goal FROM budgets WHERE user_id=?", (u_id,))
                 goal_data = cursor.fetchone()
                 goal = goal_data[0] if goal_data else 0.0
@@ -1163,7 +1148,7 @@ class BudgetOverviewPage(tk.Frame):
                 self.lbl_total_exp.config(text=f"Total Expenses: ₱{total_expenses:,.2f}")
                 self.lbl_remain_bud.config(text=f"Remaining Budget: ₱{avail_for_exp:,.2f}")
 
-                # 3. Breakdowns Rows (Dark Navy background with white text)
+                # --- 3. BREAKDOWNS (RESTORED) ---
                 for w in self.expense_rows.winfo_children(): w.destroy()
                 cursor.execute("SELECT category, SUM(amount) FROM transactions WHERE user_id=? AND type='Expense' GROUP BY category", (u_id,))
                 exp_cats = cursor.fetchall()
@@ -1181,7 +1166,7 @@ class BudgetOverviewPage(tk.Frame):
                     tk.Label(row, text=src, bg="#1C2541", fg="white").pack(side="left")
                     tk.Label(row, text=f"₱{amt:,.0f}", bg="#1C2541", fg="#7ED321", font=("Arial", 10, "bold")).pack(side="right")
 
-                # 4. Progress Gauge - VIBRANT COLOR (Neon Orange)
+                # --- 4. PROGRESS GAUGE (RESTORED) ---
                 self.gauge_canvas.delete("all")
                 self.gauge_canvas.create_oval(10, 10, 70, 70, outline="#3A506B", width=4)
                 extent = -(progress_pct / 100) * 359.9
@@ -1189,44 +1174,36 @@ class BudgetOverviewPage(tk.Frame):
                 self.gauge_canvas.create_text(40, 40, text=f"{int(progress_pct)}%", font=("Arial", 10, "bold"), fill="white")
                 self.lbl_progress_text.config(text=f"{int(progress_pct)}% of Goal\nAchieved")
 
-                # --- 5. DYNAMIC CHARTS (VIBRANT COLORS) ---
+                # --- 5. GRAPHS & CHARTS (RESTORED) ---
                 self.chart_canvas.delete("all")
                 canvas_h = self.chart_canvas.winfo_height()
                 if canvas_h <= 1: canvas_h = 300
 
-                # Coordinate Math
-                pie_cx, pie_cy = canvas_w * 0.60, canvas_h * 0.45 
-                pie_r = min(canvas_w * 0.12, canvas_h * 0.20)
-                title_y = canvas_h * 0.08
-                line_x_start, line_x_end = canvas_w * 0.08, canvas_w * 0.40
-                line_y_bottom, line_y_top = canvas_h * 0.75, canvas_h * 0.20
+                pie_cx, pie_cy = canvas_w * 0.70, canvas_h * 0.45 
+                pie_r = min(canvas_w * 0.10, canvas_h * 0.20)
+                title_y = canvas_h * 0.10
+                line_x_start, line_x_end = canvas_w * 0.05, canvas_w * 0.45
+                line_y_bottom, line_y_top = canvas_h * 0.85, canvas_h * 0.25
 
-                # Titles (White)
-                title_font = ("Arial", max(9, int(canvas_h * 0.04)), "bold")
+                title_font = ("Arial", 10, "bold")
                 self.chart_canvas.create_text((line_x_start + line_x_end) / 2, title_y, text="Expenses Over Time", font=title_font, fill="white")
                 self.chart_canvas.create_text(pie_cx, title_y, text="Expenses Categories", font=title_font, fill="white")
 
-                # VIBRANT COLOR PALETTE
                 vibrant_colors = ["#00FFCC", "#FF007F", "#7ED321", "#FFD700", "#BD10E0", "#50E3C2", "#F5A623"]
 
-                # Vibrant Pie Chart
                 if total_expenses > 0:
                     start_ang = 90
-                    line_height = max(12, int(canvas_h * 0.045))
                     for i, (cat, amt) in enumerate(exp_cats):
                         extent = -(amt / total_expenses) * 359.9
                         color = vibrant_colors[i % len(vibrant_colors)]
                         self.chart_canvas.create_arc(pie_cx - pie_r, pie_cy - pie_r, pie_cx + pie_r, pie_cy + pie_r, 
                                                      start=start_ang, extent=extent, fill=color, outline="#1C2541")
                         
-                        # Legend
-                        lx, ly = pie_cx + pie_r + 15, (pie_cy - pie_r) + (i * line_height)
-                        sq = max(8, int(line_height * 0.6))
-                        self.chart_canvas.create_rectangle(lx, ly, lx + sq, ly + sq, fill=color, outline="white")
-                        self.chart_canvas.create_text(lx + sq + 8, ly + (sq/2), text=cat, font=("Arial", 8, "bold"), anchor="w", fill="white")
+                        lx, ly = pie_cx + pie_r + 20, (pie_cy - pie_r) + (i * 20)
+                        self.chart_canvas.create_rectangle(lx, ly, lx + 10, ly + 10, fill=color, outline="white")
+                        self.chart_canvas.create_text(lx + 15, ly + 5, text=cat, font=("Arial", 8, "bold"), anchor="w", fill="white")
                         start_ang += extent
 
-                # Vibrant Line Chart (Neon Blue Line)
                 cursor.execute("SELECT date, amount FROM transactions WHERE user_id=? AND type='Expense' ORDER BY date DESC LIMIT 5", (u_id,))
                 data_points = cursor.fetchall()[::-1]
                 if data_points:
@@ -1238,9 +1215,8 @@ class BudgetOverviewPage(tk.Frame):
                         y = line_y_bottom - (float(val) / (max_v if max_v > 0 else 1) * (line_y_bottom - line_y_top))
                         pts.extend([x, y])
                     if len(pts) > 2:
-                        self.chart_canvas.create_line(pts, width=3, fill="#00E5FF", smooth=True) # Neon Blue line
+                        self.chart_canvas.create_line(pts, width=3, fill="#00E5FF", smooth=True) 
                 
-                # Axes (White/Steel Blue)
                 self.chart_canvas.create_line(line_x_start - 5, line_y_bottom, line_x_end + 10, line_y_bottom, fill="white") 
                 self.chart_canvas.create_line(line_x_start - 5, line_y_top, line_x_start - 5, line_y_bottom, fill="white")
 
