@@ -535,7 +535,7 @@ class AddExpensePage(tk.Frame):
         date = self.entries["Date:"].get()
         category = self.entries["Category:"].get()
         amount = self.entries["Amount:"].get()
-        notes = self.entries["Notes:"].get()
+        notes = self.entries["Notes:"].get("1.0", tk.END).strip()
         u_id = getattr(self.controller, 'current_user_id', None) 
         
         if u_id is None:
@@ -563,10 +563,18 @@ class AddExpensePage(tk.Frame):
             messagebox.showerror("Error", "Amount must be a number.")
 
     def clear_entries(self):
+        """Resets the form without crashing on the multi-line Notes field."""
         for field, widget in self.entries.items():
-            if field == "Category:":
-                widget.set("Select Category")
+            if field == "Category:" or field == "Source:":
+                # Reset dropdowns to placeholder
+                widget.set("Select " + field[:-1])
+                
+            elif field == "Notes:":
+                # Text widgets use "1.0" to tk.END
+                widget.delete("1.0", tk.END)
+                
             elif field != "Date:":
+                # Standard Entry widgets use 0 to tk.END
                 widget.delete(0, tk.END)
 
 
@@ -644,7 +652,7 @@ class AddIncomePage(tk.Frame):
         date = self.entries["Date:"].get()
         source = self.entries["Source:"].get()
         amount = self.entries["Amount:"].get()
-        notes = self.entries["Notes:"].get()
+        notes = self.entries["Notes:"].get("1.0", tk.END).strip()
         u_id = getattr(self.controller, 'current_user_id', None) 
         
         if u_id is None:
@@ -672,10 +680,18 @@ class AddIncomePage(tk.Frame):
             messagebox.showerror("Error", "Amount must be a number.")
 
     def clear_entries(self):
+        """Resets the form without crashing on the multi-line Notes field."""
         for field, widget in self.entries.items():
-            if field == "Source:":
-                widget.set("Select Source")
+            if field == "Category:" or field == "Source:":
+                # Reset dropdowns to placeholder
+                widget.set("Select " + field[:-1])
+                
+            elif field == "Notes:":
+                # Text widgets use "1.0" to tk.END
+                widget.delete("1.0", tk.END)
+                
             elif field != "Date:":
+                # Standard Entry widgets use 0 to tk.END
                 widget.delete(0, tk.END)
 
 # --- 5. DATA TABLE TEMPLATE (VIEW TRANSACTIONS) ---
