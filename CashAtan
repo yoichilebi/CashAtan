@@ -363,21 +363,19 @@ class DashboardPage(tk.Frame):
         main_container = tk.Frame(self, bg="#0B132B")
         main_container.pack(fill="both", expand=True, padx=20)
 
-        # --- LEFT SIDE: SCROLLABLE NAVIGATION ---
-        # Using a canvas for the sidebar so it's adjustable if not full screen
+        # --- LEFT SIDE: COMPACT NAVIGATION ---
         self.nav_canvas = tk.Canvas(main_container, bg="#0B132B", highlightthickness=0, width=280)
         self.nav_canvas.pack(side="left", fill="y", padx=(0, 20))
 
         self.scrollbar = tk.Scrollbar(main_container, orient="vertical", command=self.nav_canvas.yview)
-        # Scrollbar only shows if needed, but we prepare it here
         self.nav_canvas.configure(yscrollcommand=self.scrollbar.set)
 
         self.nav_inner_frame = tk.Frame(self.nav_canvas, bg="#0B132B")
         self.canvas_window = self.nav_canvas.create_window((0, 0), window=self.nav_inner_frame, anchor="nw")
 
-        # LOGO
+        # LOGO (Kept at 120x120 for visibility)
         self.logo_label = tk.Label(self.nav_inner_frame, bg="#0B132B")
-        self.logo_label.pack(pady=(0, 15))
+        self.logo_label.pack(pady=(0, 10))
         self.set_logo("logo.png") 
 
         nav_btn_style = {
@@ -396,78 +394,76 @@ class DashboardPage(tk.Frame):
         for text, page in btns:
             btn = tk.Button(self.nav_inner_frame, text=text, 
                             command=lambda p=page: controller.show_frame(p), **nav_btn_style)
-            btn.pack(pady=5) # Reduced pady for better fit
+            btn.pack(pady=3) 
             bind_hover(btn, hover_color="#1C2541", normal_color="#3A506B")
 
         btn_logout = tk.Button(self.nav_inner_frame, text="LOGOUT", width=25, height=2, 
                                font=("Arial", 11, "bold"), bg="#1C2541", fg="#FF007F", 
                                relief="flat", command=lambda: controller.show_frame("LoginPage"))
-        btn_logout.pack(pady=15)
+        btn_logout.pack(pady=10)
         bind_hover(btn_logout, hover_color="#3A506B", normal_color="#1C2541")
 
-        # Bindings for responsiveness
-        self.nav_inner_frame.bind("<Configure>", self.on_frame_configure)
-        self.nav_canvas.bind("<Configure>", self.on_canvas_configure)
-
-        # --- RIGHT SIDE: BIGGER PROFILE SECTION ---
+        # --- RIGHT SIDE: SLIGHTLY SMALLER PROFILE SECTION ---
         profile_frame = tk.LabelFrame(main_container, text="Profile", bg="#1C2541", 
-                                      fg="white", font=("Arial", 16, "bold"), padx=30, pady=30)
+                                      fg="white", font=("Arial", 16, "bold"), padx=25, pady=25)
         profile_frame.pack(side="right", fill="both", expand=True)
 
         top_row = tk.Frame(profile_frame, bg="#1C2541")
         top_row.pack(fill="x")
 
+        # Image Label reduced to 150x150
         self.img_label = tk.Label(top_row, bg="#0B132B", relief="solid", borderwidth=2)
-        self.img_label.grid(row=0, column=0, rowspan=4, padx=(0, 30), sticky="nsew")
+        self.img_label.grid(row=0, column=0, rowspan=4, padx=(0, 25), sticky="nsew")
 
-        placeholder = Image.new('RGB', (200, 200), color = '#0B132B')
+        placeholder = Image.new('RGB', (150, 150), color = '#0B132B')
         self.ph_img = ImageTk.PhotoImage(placeholder)
         self.img_label.config(image=self.ph_img)
 
         self.username_var = tk.StringVar(value="username")
         self.date_var = tk.StringVar(value=date.today().strftime("%m/%d/%Y"))
         
-        tk.Label(top_row, textvariable=self.username_var, font=("Arial", 22, "bold"), 
-                anchor="w", bg="#1C2541", fg="#FFFFFF").grid(row=0, column=1, pady=5, padx=10, sticky="w")
+        tk.Label(top_row, textvariable=self.username_var, font=("Arial", 20, "bold"), 
+                anchor="w", bg="#1C2541", fg="#FFFFFF").grid(row=0, column=1, pady=2, padx=10, sticky="w")
         
-        tk.Label(top_row, textvariable=self.date_var, font=("Arial", 14), 
-                fg="#bdbdbd", anchor="w", bg="#1C2541").grid(row=1, column=1, pady=5, padx=10, sticky="w")
+        tk.Label(top_row, textvariable=self.date_var, font=("Arial", 13), 
+                fg="#bdbdbd", anchor="w", bg="#1C2541").grid(row=1, column=1, pady=2, padx=10, sticky="w")
         
         goal_input_frame = tk.Frame(top_row, bg="#1C2541")
-        goal_input_frame.grid(row=2, column=1, pady=10, padx=10, sticky="w")
+        goal_input_frame.grid(row=2, column=1, pady=8, padx=10, sticky="w")
 
-        tk.Label(goal_input_frame, text="Budget Goal: ₱", font=("Arial", 14), 
+        tk.Label(goal_input_frame, text="Budget Goal: ₱", font=("Arial", 13), 
                  bg="#1C2541", fg="#FFFFFF").pack(side="left")
         
-        self.goal_entry = tk.Entry(goal_input_frame, width=18, font=("Arial", 14),
+        self.goal_entry = tk.Entry(goal_input_frame, width=15, font=("Arial", 13),
                                    bg="#0B132B", fg="#00FFCC", insertbackground="white")
         self.goal_entry.pack(side="left", padx=5)
 
-        btn_set = tk.Button(goal_input_frame, text="Set", font=("Arial", 10, "bold"), 
-                  bg="#3A506B", fg="#00FFCC", relief="flat", command=self.save_goal, width=6)
-        btn_set.pack(side="left", padx=10)
+        btn_set = tk.Button(goal_input_frame, text="Set", font=("Arial", 9, "bold"), 
+                  bg="#3A506B", fg="#00FFCC", relief="flat", command=self.save_goal, width=5)
+        btn_set.pack(side="left", padx=5)
         bind_hover(btn_set, hover_color="#1C2541", normal_color="#3A506B")
 
-        btn_upload_photo = tk.Button(top_row, text="Upload Photo", font=("Arial", 10), bg="#3A506B", 
+        btn_upload_photo = tk.Button(top_row, text="Upload Photo", font=("Arial", 9), bg="#3A506B", 
                     fg="white", relief="flat", command=self.upload_photo, padx=10)
-        btn_upload_photo.grid(row=3, column=1, pady=10, padx=10, sticky="w")
+        btn_upload_photo.grid(row=3, column=1, pady=5, padx=10, sticky="w")
         bind_hover(btn_upload_photo, hover_color="#1C2541", normal_color="#3A506B")
 
+        # Reduced pady to 20 for tighter look
         stats_frame = tk.Frame(profile_frame, bg="#1C2541")
-        stats_frame.pack(fill="x", pady=40, anchor="w")
+        stats_frame.pack(fill="x", pady=20, anchor="w")
 
         self.expense_var = tk.StringVar(value="Total Expenses: ₱0.00")
         self.savings_var = tk.StringVar(value="Current Savings: ₱0.00")
 
+        # Reduced width to 40 and height to 1
         tk.Label(stats_frame, textvariable=self.expense_var, bg="#0B132B", fg="#FF007F",
-                width=50, anchor="w", padx=20, font=("Arial", 14, "bold"),
-                relief="solid", borderwidth=2, height=2).pack(pady=10, anchor="w")           
+                width=40, anchor="w", padx=20, font=("Arial", 13, "bold"),
+                relief="solid", borderwidth=2, height=1).pack(pady=8, anchor="w")           
         
         tk.Label(stats_frame, textvariable=self.savings_var, bg="#0B132B", fg="#7ED321",
-                width=50, anchor="w", padx=20, font=("Arial", 14, "bold"),
-                relief="solid", borderwidth=2, height=2).pack(pady=10, anchor="w")
+                width=40, anchor="w", padx=20, font=("Arial", 13, "bold"),
+                relief="solid", borderwidth=2, height=1).pack(pady=8, anchor="w")
 
-    # --- RESPONSIVE HELPER METHODS ---
     def on_frame_configure(self, event):
         self.nav_canvas.configure(scrollregion=self.nav_canvas.bbox("all"))
 
@@ -479,11 +475,11 @@ class DashboardPage(tk.Frame):
         try:
             from PIL import Image, ImageTk
             img = Image.open(path)
-            img = img.resize((250, 250), Image.Resampling.LANCZOS)
+            img = img.resize((120, 120), Image.Resampling.LANCZOS)
             self.logo_photo = ImageTk.PhotoImage(img)
             self.logo_label.config(image=self.logo_photo)
         except Exception:
-            self.logo_label.config(text="CASHATAN", fg="#00FFCC", font=("Arial", 24, "bold"))
+            self.logo_label.config(text="CASHATAN", fg="#00FFCC", font=("Arial", 18, "bold"))
 
     def upload_photo(self):
         file_path = filedialog.askopenfilename(filetypes=[("Image Files", "*.png *.jpg *.jpeg")])
@@ -511,7 +507,8 @@ class DashboardPage(tk.Frame):
                     if user_info[1]: 
                         try:
                             img = Image.open(user_info[1])
-                            img = img.resize((200, 200), Image.Resampling.LANCZOS)
+                            # Matches the 150x150 size
+                            img = img.resize((150, 150), Image.Resampling.LANCZOS)
                             photo = ImageTk.PhotoImage(img)
                             self.img_label.config(image=photo)
                             self.img_label.image = photo 
@@ -842,7 +839,8 @@ class ViewTransactionsPage(tk.Frame):
         self.tree.column("Date", width=120, anchor="center")
         self.tree.column("Category", width=150, anchor="center")
         self.tree.column("Amount", width=100, anchor="center")
-        self.tree.column("Notes", width=250, anchor="w")
+        # Updated anchor to "center"
+        self.tree.column("Notes", width=250, anchor="center")
 
         self.tree["displaycolumns"] = ("Type", "Date", "Category", "Amount", "Notes")
         self.tree.pack(fill="both", expand=True, padx=30, pady=10)
