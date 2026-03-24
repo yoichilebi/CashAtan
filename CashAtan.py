@@ -14,7 +14,6 @@ def init_db():
         cursor.execute("PRAGMA foreign_keys = ON;")
 
         # 1. Users Table
-        # Fixed: Added missing comma after password
         cursor.execute('''CREATE TABLE IF NOT EXISTS users (
             user_id INTEGER PRIMARY KEY AUTOINCREMENT,
             full_name TEXT NOT NULL,
